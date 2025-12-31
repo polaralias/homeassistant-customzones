@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Custom Zone",
+        "description": "Enter the details for your custom polygon zone.",
+        "data": {
+          "name": "Zone Name",
+          "device": "Tracked Device",
+          "coordinates": "Polygon Coordinates (JSON list of lists, e.g. [[lat, lon], ...])",
+          "zone_type": "Zone Type"
+        }
+      }
+    },
+    "error": {
+      "invalid_format": "Invalid coordinate format. Must be JSON list of [lat, lon] and have at least 3 points."
+    },
+    "abort": {
+      "already_configured": "This device is already configured"
+    }
+  }
+}
