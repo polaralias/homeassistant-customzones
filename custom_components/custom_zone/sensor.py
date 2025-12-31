@@ -1,15 +1,16 @@
-"""Binary sensor platform for Custom Zone."""
+"""Sensor platform for Custom Zone."""
 from __future__ import annotations
 
 import json
 import logging
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.util import slugify
 
 from .const import DOMAIN, CONF_DEVICE, CONF_NAME, CONF_COORDINATES
 
@@ -20,29 +21,45 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Custom Zone binary sensor."""
+    """Set up the Custom Zone sensor."""
     name = entry.data[CONF_NAME]
     device = entry.data[CONF_DEVICE]
     coords = json.loads(entry.data[CONF_COORDINATES])
 
     _LOGGER.debug("Setting up Custom Zone: %s for device %s", name, device)
-    async_add_entities([CustomZoneBinarySensor(name, device, coords)], True)
+    async_add_entities([CustomZoneSensor(name, device, coords)], True)
 
 
-class CustomZoneBinarySensor(BinarySensorEntity):
-    """Representation of a Custom Zone binary sensor."""
+class CustomZoneSensor(SensorEntity):
+    """Representation of a Custom Zone sensor."""
 
     def __init__(self, name, device_entity_id, polygon_coords):
-        """Initialize the binary sensor."""
+        """Initialize the sensor."""
         self._attr_name = name
         self._device_entity_id = device_entity_id
         self._polygon = polygon_coords
-        self._attr_is_on = False
+        self._is_inside = False
+
+        # Requirement: "binary_sensor.customzone_james_work"
+        # Since we are in the sensor platform, the domain will be 'sensor'.
+        # However, we can construct the object_id to match the requirement.
+        # entity_id format: <domain>.<object_id>
+        # We want object_id to be: customzone_{person}_{zone}
+
+        person_slug = slugify(device_entity_id.split(".")[-1])
+        zone_slug = slugify(name)
+        self.entity_id = f"sensor.customzone_{person_slug}_{zone_slug}"
+
         self._attr_unique_id = f"{name}_{device_entity_id}_custom_zone"
         self._attr_extra_state_attributes = {
             "device": device_entity_id,
             "polygon": polygon_coords
         }
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        return "In zone" if self._is_inside else "Not in zone"
 
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
@@ -59,7 +76,7 @@ class CustomZoneBinarySensor(BinarySensorEntity):
         new_state = event.data.get("new_state")
         if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             _LOGGER.debug("Device %s is unavailable or unknown", self._device_entity_id)
-            self._attr_is_on = False
+            self._is_inside = False
             self.async_write_ha_state()
             return
 
@@ -68,7 +85,7 @@ class CustomZoneBinarySensor(BinarySensorEntity):
 
         if lat is None or lon is None:
             _LOGGER.debug("Device %s has no coordinates", self._device_entity_id)
-            self._attr_is_on = False
+            self._is_inside = False
             self.async_write_ha_state()
             return
 
@@ -84,8 +101,8 @@ class CustomZoneBinarySensor(BinarySensorEntity):
             else:
                 _LOGGER.debug("Outside the Poly Zone")
 
-            if self._attr_is_on != is_inside:
-                self._attr_is_on = is_inside
+            if self._is_inside != is_inside:
+                self._is_inside = is_inside
                 self.async_write_ha_state()
         except ValueError:
             _LOGGER.error("Invalid coordinates for device %s", self._device_entity_id)

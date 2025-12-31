@@ -72,7 +72,7 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_NAME): selector.TextSelector(),
                     vol.Required(CONF_DEVICE): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="device_tracker")
+                        selector.EntitySelectorConfig(domain="person")
                     ),
                     vol.Required(CONF_ZONE_TYPE, default=ZONE_TYPE_POLYGON): selector.SelectSelector(
                         selector.SelectSelectorConfig(
@@ -136,14 +136,10 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         next_point_idx = current_count + 1
 
-        status_msg = f"{current_count} points entered, enter a {self._ordinal(next_point_idx)}"
-        shape_desc = self._get_shape_description(current_count) # Shape BEFORE adding this point?
-        # Requirement: "explain the resulting shape mapped"
-        # If they have 3 points, they have a triangle.
-        # If they add a 4th, it becomes a Quad.
-        # The prompt says: "2 points entered, enter a 3rd"
-        # And "a 4 point rectangle has been created".
-        # So maybe we should describe the shape formed by the *currently entered* points.
+        # Requirement: "show a count of the co-ords entered so far incrementing up to 15; 1/15 2/15 3/15 and so on."
+        # next_point_idx represents the point we are about to enter.
+        status_msg = f"Point {next_point_idx}/15"
+        shape_desc = self._get_shape_description(current_count)
 
         schema = {
             vol.Required(CONF_LATITUDE): float,

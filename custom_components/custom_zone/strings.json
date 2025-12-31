@@ -6,7 +6,7 @@
         "description": "Enter the details for your custom polygon zone.",
         "data": {
           "name": "Zone Name",
-          "device": "Tracked Device",
+          "device": "Tracked Person",
           "zone_type": "Zone Type"
         }
       },
