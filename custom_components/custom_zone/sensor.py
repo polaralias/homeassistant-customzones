@@ -52,9 +52,13 @@ class CustomZoneSensor(SensorEntity):
         self.entity_id = f"sensor.customzone_{person_slug}_{zone_slug}"
 
         self._attr_unique_id = f"{name}_{device_entity_id}_custom_zone"
+        self._current_lat = None
+        self._current_lon = None
         self._attr_extra_state_attributes = {
             "device": device_entity_id,
-            "polygon": polygon_coords
+            "polygon": polygon_coords,
+            "triggering_latitude": self._current_lat,
+            "triggering_longitude": self._current_lon,
         }
 
     @property
@@ -113,6 +117,17 @@ class CustomZoneSensor(SensorEntity):
             lat = float(lat)
             lon = float(lon)
 
+            # Check if coordinates changed
+            coords_changed = self._current_lat != lat or self._current_lon != lon
+            self._current_lat = lat
+            self._current_lon = lon
+
+            # Update attributes with triggering coordinates
+            self._attr_extra_state_attributes.update({
+                "triggering_latitude": self._current_lat,
+                "triggering_longitude": self._current_lon,
+            })
+
             # Using exact coordinates as requested, ignoring accuracy.
             is_inside = self._point_in_polygon(lat, lon)
 
@@ -123,9 +138,15 @@ class CustomZoneSensor(SensorEntity):
 
             if self._is_inside != is_inside:
                 self._is_inside = is_inside
+                _LOGGER.info(
+                    "State changed to %s. Triggering coordinates: lat=%s, lon=%s",
+                    self.state, lat, lon
+                )
                 self.async_write_ha_state()
-            elif not was_available:
-                # If we were unavailable and now available, we must write state even if _is_inside didn't change
+            elif not was_available or coords_changed:
+                # Write state if:
+                # 1. We were unavailable and now available
+                # 2. Coordinates changed (so attributes update)
                 self.async_write_ha_state()
 
         except ValueError:
