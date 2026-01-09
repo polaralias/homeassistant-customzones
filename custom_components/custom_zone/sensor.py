@@ -6,7 +6,7 @@ import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE, STATE_UNAVAILABLE, STATE_UNKNOWN, ATTR_GPS_ACCURACY
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
@@ -39,6 +39,7 @@ class CustomZoneSensor(SensorEntity):
         self._device_entity_id = device_entity_id
         self._polygon = polygon_coords
         self._is_inside = False
+        self._is_available = True
 
         # Requirement: "binary_sensor.customzone_james_work"
         # Since we are in the sensor platform, the domain will be 'sensor'.
@@ -61,6 +62,11 @@ class CustomZoneSensor(SensorEntity):
         """Return the state of the sensor."""
         return "In zone" if self._is_inside else "Not in zone"
 
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._is_available
+
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         _LOGGER.debug("Custom Zone %s added to hass, tracking %s", self._attr_name, self._device_entity_id)
@@ -74,26 +80,40 @@ class CustomZoneSensor(SensorEntity):
     def _async_device_changed(self, event) -> None:
         """Handle device state changes."""
         new_state = event.data.get("new_state")
+        was_available = self._is_available
+
         if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             _LOGGER.debug("Device %s is unavailable or unknown", self._device_entity_id)
-            self._is_inside = False
-            self.async_write_ha_state()
+            if self._is_available:
+                self._is_available = False
+                self.async_write_ha_state()
             return
 
         lat = new_state.attributes.get(ATTR_LATITUDE)
         lon = new_state.attributes.get(ATTR_LONGITUDE)
 
+        # NOTE: We explicitly check and log accuracy for debugging, but we DO NOT use it in calculation.
+        # The user requested to use exact coordinates "rather than paying attention to the range of coordinates".
+        accuracy = new_state.attributes.get(ATTR_GPS_ACCURACY)
+
         if lat is None or lon is None:
             _LOGGER.debug("Device %s has no coordinates", self._device_entity_id)
-            self._is_inside = False
-            self.async_write_ha_state()
+            if self._is_available:
+                self._is_available = False
+                self.async_write_ha_state()
             return
 
-        _LOGGER.debug("Device %s at %s, %s. Checking zone %s", self._device_entity_id, lat, lon, self._attr_name)
+        # Restore availability if we have valid coordinates
+        self._is_available = True
+
+        _LOGGER.debug("Device %s at %s, %s (Accuracy: %s). Checking zone %s",
+                      self._device_entity_id, lat, lon, accuracy, self._attr_name)
 
         try:
             lat = float(lat)
             lon = float(lon)
+
+            # Using exact coordinates as requested, ignoring accuracy.
             is_inside = self._point_in_polygon(lat, lon)
 
             if is_inside:
@@ -104,6 +124,10 @@ class CustomZoneSensor(SensorEntity):
             if self._is_inside != is_inside:
                 self._is_inside = is_inside
                 self.async_write_ha_state()
+            elif not was_available:
+                # If we were unavailable and now available, we must write state even if _is_inside didn't change
+                self.async_write_ha_state()
+
         except ValueError:
             _LOGGER.error("Invalid coordinates for device %s", self._device_entity_id)
 
