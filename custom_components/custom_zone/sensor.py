@@ -124,8 +124,8 @@ class CustomZoneSensor(SensorEntity):
 
             # Update attributes with triggering coordinates
             self._attr_extra_state_attributes.update({
-                "triggering_latitude": self._current_lat,
-                "triggering_longitude": self._current_lon,
+                "triggering_latitude": str(self._current_lat),
+                "triggering_longitude": str(self._current_lon),
             })
 
             # Using exact coordinates as requested, ignoring accuracy.
