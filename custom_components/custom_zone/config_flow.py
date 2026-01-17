@@ -10,7 +10,6 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.helpers import selector
-import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN, CONF_DEVICE, CONF_COORDINATES, CONF_ZONE_TYPE, ZONE_TYPE_POLYGON
 
@@ -59,8 +58,6 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
         """Handle the initial step."""
-        errors: dict[str, str] = {}
-
         if user_input is not None:
             self._data = user_input
             self._points = []  # Reset points
@@ -82,7 +79,7 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
-            errors=errors,
+            errors={},
         )
 
     async def async_step_point(

@@ -8,3 +8,6 @@ CONF_COORDINATES = "coordinates"
 CONF_ZONE_TYPE = "zone_type"
 
 ZONE_TYPE_POLYGON = "polygon"
+
+# Tolerance used for vertex/boundary checks (about 1 meter at the equator).
+COORD_TOLERANCE = 1e-5

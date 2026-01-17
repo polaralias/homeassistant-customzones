@@ -7,9 +7,9 @@ Custom Zone is a Home Assistant custom component that allows you to define compl
 - **Polygon Zones**: Define zones with any shape (minimum 3 points, up to 15 points).
 - **Interactive Configuration**: Easy-to-use Config Flow to add points one by one.
 - **Dynamic Feedback**: Real-time updates on the shape type (Triangle, Quadrilateral, etc.) as you add points.
-- **Binary Sensor**: Creates a `binary_sensor` entity that indicates if a tracked device is `on` (Inside) or `off` (Outside).
+- **Sensor**: Creates a `sensor` entity that indicates if a tracked person is "In zone" or "Not in zone".
 - **Ray-casting Algorithm**: Uses the robust ray-casting algorithm to accurately determine point-in-polygon status.
-- **Attributes**: The binary sensor exposes the polygon coordinates and the tracked device entity ID as attributes.
+- **Attributes**: The sensor exposes the polygon coordinates and the tracked person entity ID as attributes.
 
 ## Installation
 
@@ -38,7 +38,7 @@ Configuration is done entirely through the Home Assistant UI.
 3. Search for **Custom Zone** and select it.
 4. Follow the setup wizard:
    - **Zone Name**: Give your zone a friendly name.
-   - **Tracked Device**: Select the `device_tracker` entity you want to monitor in this zone.
+   - **Tracked Person**: Select the `person` entity you want to monitor in this zone.
    - **Zone Type**: Currently supports "Polygon".
 5. **Add Points**:
    - Enter the **Latitude** and **Longitude** for the first point of your polygon.
@@ -49,29 +49,29 @@ Configuration is done entirely through the Home Assistant UI.
 
 ## Usage
 
-After configuration, a new binary sensor will be created with the entity ID format:
-`binary_sensor.<zone_name>_<device_name>_custom_zone`
+After configuration, a new sensor will be created with the entity ID format:
+`sensor.customzone_<person>_<zone>`
 
 ### State
-- **On**: The tracked device is currently inside the defined polygon zone.
-- **Off**: The tracked device is outside the defined polygon zone.
+- **In zone**: The tracked person is currently inside the defined polygon zone.
+- **Not in zone**: The tracked person is outside the defined polygon zone.
 
 ### Attributes
-- `device`: The entity ID of the tracked device.
+- `device`: The entity ID of the tracked person.
 - `polygon`: A list of `[latitude, longitude]` pairs defining the zone.
 
 ### Example Automation
 
-You can use this binary sensor in automations just like any other sensor.
+You can use this sensor in automations just like any other sensor.
 
 ```yaml
 automation:
   - alias: "Notify when car enters custom zone"
     trigger:
       - platform: state
-        entity_id: binary_sensor.home_parking_car_custom_zone
-        from: "off"
-        to: "on"
+        entity_id: sensor.customzone_james_home_parking
+        from: "Not in zone"
+        to: "In zone"
     action:
       - service: notify.mobile_app_my_phone
         data:
