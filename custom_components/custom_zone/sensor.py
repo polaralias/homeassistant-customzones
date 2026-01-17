@@ -42,13 +42,17 @@ class CustomZoneSensor(SensorEntity):
         self._is_inside = False
         self._is_available = True
 
-        # Requirement: "binary_sensor.customzone_james_work"
+        # Requirement: "sensor.customzone_james_work"
         # Since we are in the sensor platform, the domain will be 'sensor'.
         # However, we can construct the object_id to match the requirement.
         # entity_id format: <domain>.<object_id>
         # We want object_id to be: customzone_{person}_{zone}
-
-        person_slug = slugify(device_entity_id.split(".")[-1])
+        
+        # Extract the device identifier from the device_entity_id
+        # For device_tracker.james -> "james"
+        device_parts = device_entity_id.split(".")
+        device_identifier = device_parts[-1] if len(device_parts) > 1 else device_entity_id
+        person_slug = slugify(device_identifier)
         zone_slug = slugify(name)
         self.entity_id = f"sensor.customzone_{person_slug}_{zone_slug}"
 
