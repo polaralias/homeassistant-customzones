@@ -69,7 +69,7 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_NAME): selector.TextSelector(),
                     vol.Required(CONF_DEVICE): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="person")
+                        selector.EntitySelectorConfig(domain="device_tracker")
                     ),
                     vol.Required(CONF_ZONE_TYPE, default=ZONE_TYPE_POLYGON): selector.SelectSelector(
                         selector.SelectSelectorConfig(

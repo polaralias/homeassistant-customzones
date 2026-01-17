@@ -38,7 +38,7 @@ Configuration is done entirely through the Home Assistant UI.
 3. Search for **Custom Zone** and select it.
 4. Follow the setup wizard:
    - **Zone Name**: Give your zone a friendly name.
-   - **Tracked Person**: Select the `person` entity you want to monitor in this zone.
+   - **Tracked Device**: Select the `device_tracker` entity you want to monitor in this zone.
    - **Zone Type**: Currently supports "Polygon".
 5. **Add Points**:
    - Enter the **Latitude** and **Longitude** for the first point of your polygon.
@@ -57,8 +57,10 @@ After configuration, a new sensor will be created with the entity ID format:
 - **Not in zone**: The tracked person is outside the defined polygon zone.
 
 ### Attributes
-- `device`: The entity ID of the tracked person.
+- `device`: The entity ID of the tracked device.
 - `polygon`: A list of `[latitude, longitude]` pairs defining the zone.
+
+Note: If you use `person` entities in Home Assistant, they are typically built from one or more `device_tracker` sources.
 
 ### Example Automation
 
