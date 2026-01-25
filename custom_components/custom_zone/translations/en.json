@@ -6,7 +6,7 @@
         "description": "Enter the details for your custom polygon zone.",
         "data": {
           "name": "Zone Name",
-          "device": "Tracked Person",
+          "trackers": "Tracked Persons/Devices",
           "zone_type": "Zone Type"
         }
       },
@@ -23,10 +23,12 @@
     "error": {
       "invalid_format": "Invalid coordinate format.",
       "not_enough_points": "Polygon must have at least 3 points.",
-      "invalid_coord": "Invalid coordinate values."
+      "invalid_coord": "Invalid coordinate values.",
+      "too_many_trackers": "You can only select up to 10 trackers.",
+      "empty_trackers": "You must select at least one tracker."
     },
     "abort": {
-      "already_configured": "This device is already configured"
+      "already_configured": "This device/zone is already configured"
     }
   }
 }

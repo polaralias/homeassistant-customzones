@@ -11,7 +11,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, CONF_DEVICE, CONF_COORDINATES, CONF_ZONE_TYPE, ZONE_TYPE_POLYGON
+from .const import DOMAIN, CONF_TRACKERS, CONF_COORDINATES, CONF_ZONE_TYPE, ZONE_TYPE_POLYGON, CONF_MAX_TRACKERS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,18 +58,28 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
         """Handle the initial step."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            self._data = user_input
-            self._points = []  # Reset points
-            return await self.async_step_point()
+            trackers = user_input.get(CONF_TRACKERS, [])
+            if len(trackers) > CONF_MAX_TRACKERS:
+                errors["base"] = "too_many_trackers"
+            elif not trackers:
+                errors[CONF_TRACKERS] = "empty_trackers"
+            else:
+                self._data = user_input
+                self._points = []  # Reset points
+                return await self.async_step_point()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_NAME): selector.TextSelector(),
-                    vol.Required(CONF_DEVICE): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="device_tracker")
+                    vol.Required(CONF_TRACKERS): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=["device_tracker", "person"],
+                            multiple=True
+                        )
                     ),
                     vol.Required(CONF_ZONE_TYPE, default=ZONE_TYPE_POLYGON): selector.SelectSelector(
                         selector.SelectSelectorConfig(
@@ -79,7 +89,7 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
-            errors={},
+            errors=errors,
         )
 
     async def async_step_point(

@@ -1,4 +1,4 @@
-# Custom Zone
+# <img src="logo.png" width="50" height="50" align="center"> Custom Zone
 
 Custom Zone is a Home Assistant custom component that allows you to define complex polygon-based zones and track whether a specific device is inside them. Unlike the standard Home Assistant zones which are circular, Custom Zone supports arbitrary shapes (polygons) defined by a series of coordinates.
 

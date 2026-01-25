@@ -2,10 +2,12 @@
 
 DOMAIN = "custom_zone"
 
-CONF_DEVICE = "device"
+CONF_TRACKERS = "trackers"
 CONF_NAME = "name"
 CONF_COORDINATES = "coordinates"
 CONF_ZONE_TYPE = "zone_type"
+
+CONF_MAX_TRACKERS = 10
 
 ZONE_TYPE_POLYGON = "polygon"
 

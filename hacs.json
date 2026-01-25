@@ -1,3 +1,5 @@
 {
+  "name": "Custom Zone",
+  "content_type": "integration",
   "render_readme": true
 }
