@@ -66,7 +66,6 @@ class CustomZoneSensor(SensorEntity):
             "triggering_longitude": self._current_lon,
             "gps_accuracy": None,
             "boundary_distance_m": None,
-            "accuracy_uncertain": False,
         }
 
     @property
@@ -137,40 +136,28 @@ class CustomZoneSensor(SensorEntity):
 
             is_inside = self._point_in_polygon(lat, lon)
             accuracy_m = self._parse_accuracy_meters(accuracy)
-            boundary_distance_m = None
-            accuracy_uncertain = False
-            if accuracy_m is not None:
-                boundary_distance_m = self._distance_to_polygon_meters(lat, lon)
-                accuracy_uncertain = boundary_distance_m <= accuracy_m
+            boundary_distance_m = self._distance_to_polygon_meters(lat, lon)
+
             # Update attributes with triggering coordinates
             self._attr_extra_state_attributes.update({
-                "triggering_latitude": str(self._current_lat),
-                "triggering_longitude": str(self._current_lon),
+                "triggering_latitude": self._current_lat,
+                "triggering_longitude": self._current_lon,
                 "gps_accuracy": accuracy_m,
-                "boundary_distance_m": boundary_distance_m,
-                "accuracy_uncertain": accuracy_uncertain,
+                "boundary_distance_m": round(boundary_distance_m, 2) if boundary_distance_m is not None else None,
             })
 
             if is_inside:
-                _LOGGER.debug("Inside the Poly Zone")
+                _LOGGER.debug("Inside the Poly Zone: %s", self._attr_name)
             else:
-                _LOGGER.debug("Outside the Poly Zone")
+                _LOGGER.debug("Outside the Poly Zone: %s", self._attr_name)
 
             if self._is_inside != is_inside:
-                if accuracy_uncertain:
-                    _LOGGER.debug(
-                        "Accuracy %sm overlaps boundary (%sm). Keeping previous state %s.",
-                        accuracy_m, boundary_distance_m, self.state
-                    )
-                    if not was_available or coords_changed:
-                        self.async_write_ha_state()
-                else:
-                    self._is_inside = is_inside
-                    _LOGGER.info(
-                        "State changed to %s. Triggering coordinates: lat=%s, lon=%s",
-                        self.state, lat, lon
-                    )
-                    self.async_write_ha_state()
+                self._is_inside = is_inside
+                _LOGGER.info(
+                    "State changed to %s for %s. Triggered by coordinates: lat=%s, lon=%s (Accuracy: %sm, Boundary: %sm)",
+                    self.native_value, self._attr_name, lat, lon, accuracy_m, boundary_distance_m
+                )
+                self.async_write_ha_state()
             elif not was_available or coords_changed:
                 # Write state if:
                 # 1. We were unavailable and now available
