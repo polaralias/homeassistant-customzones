@@ -4,18 +4,38 @@ from __future__ import annotations
 import json
 import logging
 import math
+from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE, STATE_UNAVAILABLE, STATE_UNKNOWN, ATTR_GPS_ACCURACY
+from homeassistant.const import (
+    ATTR_GPS_ACCURACY,
+    ATTR_LATITUDE,
+    ATTR_LONGITUDE,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import slugify
 
-from .const import DOMAIN, CONF_TRACKERS, CONF_NAME, CONF_COORDINATES, COORD_TOLERANCE
+from .const import (
+    CONF_COORDINATES,
+    CONF_NAME,
+    CONF_TRACKERS,
+    COORD_TOLERANCE,
+    DOMAIN,
+    MIN_POLYGON_POINTS,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+TRACKER_STATUS_INVALID_COORDINATES = "invalid_coordinates"
+TRACKER_STATUS_NO_COORDINATES = "no_coordinates"
+TRACKER_STATUS_TRACKED = "tracked"
+TRACKER_STATUS_UNAVAILABLE = "unavailable"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -29,68 +49,85 @@ async def async_setup_entry(
         _LOGGER.error("No trackers configured for Custom Zone %s", name)
         return
 
-    # Handle both single string (migration) and list of strings
     if isinstance(trackers, str):
         trackers = [trackers]
-    coords = json.loads(entry.data[CONF_COORDINATES])
+
+    try:
+        coords = json.loads(entry.data[CONF_COORDINATES])
+    except (TypeError, ValueError) as err:
+        _LOGGER.error("Invalid polygon data for Custom Zone %s: %s", name, err)
+        return
+
+    if len(coords) < MIN_POLYGON_POINTS:
+        _LOGGER.error("Custom Zone %s has fewer than %s polygon points", name, MIN_POLYGON_POINTS)
+        return
 
     _LOGGER.debug("Setting up Custom Zone: %s for trackers %s", name, trackers)
-    async_add_entities([CustomZoneSensor(name, trackers, coords)], True)
+    async_add_entities([CustomZoneSensor(entry.entry_id, name, trackers, coords)], True)
 
 
 class CustomZoneSensor(SensorEntity):
     """Representation of a Custom Zone sensor."""
 
-    def __init__(self, name, tracker_entity_ids, polygon_coords):
+    def __init__(
+        self,
+        entry_id: str,
+        name: str,
+        tracker_entity_ids: list[str],
+        polygon_coords: list[list[float]],
+    ) -> None:
         """Initialize the sensor."""
         self._attr_name = name
-        self._tracker_entity_ids = tracker_entity_ids
+        self._attr_should_poll = False
+        self._attr_unique_id = entry_id
+        self._tracker_entity_ids = list(tracker_entity_ids)
         self._polygon = polygon_coords
-        self._trackers_inside = set()
-        self._is_available = True
+        self._trackers_inside: set[str] = set()
+        self._is_available = False
 
         zone_slug = slugify(name)
-        # If there's only one tracker, we can include it in the entity_id for backward compatibility/preference
-        # but the requirement was generic for multiple trackers.
-        if len(tracker_entity_ids) == 1:
-            device_parts = tracker_entity_ids[0].split(".")
-            device_identifier = device_parts[-1] if len(device_parts) > 1 else tracker_entity_ids[0]
-            person_slug = slugify(device_identifier)
-            self.entity_id = f"sensor.customzone_{person_slug}_{zone_slug}"
+        if len(self._tracker_entity_ids) == 1:
+            device_identifier = self._tracker_entity_ids[0].split(".")[-1]
+            self.entity_id = f"sensor.customzone_{slugify(device_identifier)}_{zone_slug}"
         else:
             self.entity_id = f"sensor.customzone_{zone_slug}"
 
-        self._attr_unique_id = f"{name}_{'_'.join(tracker_entity_ids)}_custom_zone"
-        
-        # Track individual tracker states/coords for attributes
-        self._tracker_data = {
+        self._tracker_data: dict[str, dict[str, Any]] = {
             entity_id: {
                 "lat": None,
                 "lon": None,
                 "accuracy": None,
-                "in_zone": False,
-                "distance": None
-            } for entity_id in tracker_entity_ids
+                "in_zone": None,
+                "distance": None,
+                "status": TRACKER_STATUS_UNAVAILABLE,
+            }
+            for entity_id in self._tracker_entity_ids
         }
 
         self._attr_extra_state_attributes = {
-            "trackers": tracker_entity_ids,
+            "trackers": self._tracker_entity_ids,
             "polygon": polygon_coords,
             "trackers_in_zone": [],
-            "trackers_out_zone": tracker_entity_ids.copy(),
+            "trackers_out_zone": [],
+            "trackers_unavailable": self._tracker_entity_ids.copy(),
             "count_in_zone": 0,
+            "count_out_zone": 0,
+            "count_unavailable": len(self._tracker_entity_ids),
         }
         self._attr_icon = "mdi:map-marker-polygon"
+        self._update_state_and_attributes()
 
     @property
     def entity_picture(self) -> str | None:
         """Return the entity picture to use in the frontend."""
-        # Using the local brand icon API provided by Home Assistant for integrations
         return f"/api/brand_icon/{DOMAIN}/icon.png"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
+        if not self._is_available:
+            return None
+
         count = len(self._trackers_inside)
         if count == 0:
             return "all out of zone"
@@ -103,17 +140,23 @@ class CustomZoneSensor(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
-        _LOGGER.debug("Custom Zone %s added to hass, tracking %s", self._attr_name, self._tracker_entity_ids)
+        _LOGGER.debug(
+            "Custom Zone %s added to hass, tracking %s",
+            self._attr_name,
+            self._tracker_entity_ids,
+        )
         self.async_on_remove(
             async_track_state_change_event(
-                self.hass, self._tracker_entity_ids, self._async_tracker_changed
+                self.hass,
+                self._tracker_entity_ids,
+                self._async_tracker_changed,
             )
         )
         for entity_id in self._tracker_entity_ids:
             current_state = self.hass.states.get(entity_id)
             if current_state is not None:
                 self._handle_tracker_state_update(entity_id, current_state, fire_update=False)
-        
+
         self._update_state_and_attributes()
 
     @callback
@@ -123,17 +166,33 @@ class CustomZoneSensor(SensorEntity):
         new_state = event.data.get("new_state")
         self._handle_tracker_state_update(entity_id, new_state)
 
-    def _handle_tracker_state_update(self, entity_id, new_state, fire_update=True) -> None:
+    def _clear_tracker_state(self, entity_id: str, status: str) -> None:
+        """Clear tracker data when a usable location is not available."""
+        self._trackers_inside.discard(entity_id)
+        self._tracker_data[entity_id].update(
+            {
+                "lat": None,
+                "lon": None,
+                "accuracy": None,
+                "in_zone": None,
+                "distance": None,
+                "status": status,
+            }
+        )
+
+    def _handle_tracker_state_update(
+        self,
+        entity_id: str,
+        new_state: Any,
+        fire_update: bool = True,
+    ) -> None:
         """Handle tracker state updates."""
+        if entity_id not in self._tracker_data:
+            return
+
         if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             _LOGGER.debug("Tracker %s is unavailable or unknown", entity_id)
-            if entity_id in self._trackers_inside:
-                self._trackers_inside.discard(entity_id)
-            
-            self._tracker_data[entity_id].update({
-                "lat": None, "lon": None, "accuracy": None, "in_zone": False, "distance": None
-            })
-            
+            self._clear_tracker_state(entity_id, TRACKER_STATUS_UNAVAILABLE)
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
@@ -145,61 +204,84 @@ class CustomZoneSensor(SensorEntity):
 
         if lat is None or lon is None:
             _LOGGER.debug("Tracker %s has no coordinates", entity_id)
-            if entity_id in self._trackers_inside:
-                self._trackers_inside.discard(entity_id)
-            
-            self._tracker_data[entity_id].update({
-                "lat": None, "lon": None, "accuracy": None, "in_zone": False, "distance": None
-            })
-
+            self._clear_tracker_state(entity_id, TRACKER_STATUS_NO_COORDINATES)
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
             return
 
         try:
-            lat = float(lat)
-            lon = float(lon)
-            is_inside = self._point_in_polygon(lat, lon)
-            accuracy_m = self._parse_accuracy_meters(accuracy)
-            boundary_distance_m = self._distance_to_polygon_meters(lat, lon)
-
-            self._tracker_data[entity_id].update({
-                "lat": lat,
-                "lon": lon,
-                "accuracy": accuracy_m,
-                "in_zone": is_inside,
-                "distance": round(boundary_distance_m, 2) if boundary_distance_m is not None else None
-            })
-
-            if is_inside:
-                self._trackers_inside.add(entity_id)
-            else:
-                self._trackers_inside.discard(entity_id)
-
+            latitude = float(lat)
+            longitude = float(lon)
+        except (TypeError, ValueError):
+            _LOGGER.warning("Invalid coordinates for tracker %s", entity_id)
+            self._clear_tracker_state(entity_id, TRACKER_STATUS_INVALID_COORDINATES)
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
+            return
 
-        except ValueError:
-            _LOGGER.error("Invalid coordinates for tracker %s", entity_id)
+        is_inside = self._point_in_polygon(latitude, longitude)
+        accuracy_m = self._parse_accuracy_meters(accuracy)
+        boundary_distance_m = self._distance_to_polygon_meters(latitude, longitude)
 
-    def _update_state_and_attributes(self):
+        self._tracker_data[entity_id].update(
+            {
+                "lat": latitude,
+                "lon": longitude,
+                "accuracy": accuracy_m,
+                "in_zone": is_inside,
+                "distance": round(boundary_distance_m, 2) if boundary_distance_m is not None else None,
+                "status": TRACKER_STATUS_TRACKED,
+            }
+        )
+
+        if is_inside:
+            self._trackers_inside.add(entity_id)
+        else:
+            self._trackers_inside.discard(entity_id)
+
+        if fire_update:
+            self._update_state_and_attributes()
+            self.async_write_ha_state()
+
+    def _update_state_and_attributes(self) -> None:
         """Update the sensor attributes based on current tracker data."""
-        in_zone = sorted(list(self._trackers_inside))
-        out_zone = sorted([eid for eid in self._tracker_entity_ids if eid not in self._trackers_inside])
-        
-        self._attr_extra_state_attributes.update({
-            "trackers_in_zone": in_zone,
-            "trackers_out_zone": out_zone,
-            "count_in_zone": len(in_zone),
-        })
-        
-        # Also include individual data for convenience
+        in_zone = sorted(
+            entity_id
+            for entity_id, data in self._tracker_data.items()
+            if data["in_zone"] is True
+        )
+        out_zone = sorted(
+            entity_id
+            for entity_id, data in self._tracker_data.items()
+            if data["in_zone"] is False
+        )
+        unavailable = sorted(
+            entity_id
+            for entity_id, data in self._tracker_data.items()
+            if data["status"] != TRACKER_STATUS_TRACKED
+        )
+
+        self._trackers_inside = set(in_zone)
+        self._is_available = not unavailable
+
+        self._attr_extra_state_attributes.update(
+            {
+                "trackers_in_zone": in_zone,
+                "trackers_out_zone": out_zone,
+                "trackers_unavailable": unavailable,
+                "count_in_zone": len(in_zone),
+                "count_out_zone": len(out_zone),
+                "count_unavailable": len(unavailable),
+            }
+        )
+
         for entity_id, data in self._tracker_data.items():
-            prefix = slugify(entity_id.split(".")[-1])
+            prefix = slugify(entity_id)
             self._attr_extra_state_attributes[f"{prefix}_in_zone"] = data["in_zone"]
             self._attr_extra_state_attributes[f"{prefix}_distance"] = data["distance"]
+            self._attr_extra_state_attributes[f"{prefix}_status"] = data["status"]
 
     def _point_in_polygon(self, lat, lon):
         """Check if point (lat, lon) is inside the polygon."""

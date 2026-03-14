@@ -2,57 +2,81 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
-from homeassistant.const import CONF_NAME, CONF_LATITUDE, CONF_LONGITUDE
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME
 from homeassistant.helpers import selector
+from homeassistant.util import slugify
 
-from .const import DOMAIN, CONF_TRACKERS, CONF_COORDINATES, CONF_ZONE_TYPE, ZONE_TYPE_POLYGON, CONF_MAX_TRACKERS
+from .const import (
+    CONF_COORDINATES,
+    CONF_MAX_TRACKERS,
+    CONF_TRACKERS,
+    CONF_ZONE_TYPE,
+    DOMAIN,
+    MAX_POLYGON_POINTS,
+    MIN_POLYGON_POINTS,
+    ZONE_TYPE_POLYGON,
+)
 
-_LOGGER = logging.getLogger(__name__)
 
 class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Custom Zone."""
 
     VERSION = 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the config flow."""
         super().__init__()
-        self._data = {}
-        self._points = []
+        self._data: dict[str, Any] = {}
+        self._points: list[list[float]] = []
 
-    def _ordinal(self, n):
-        """Return ordinal string for integer n."""
-        if 11 <= (n % 100) <= 13:
-            suffix = 'th'
-        else:
-            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
-        return f"{n}{suffix}"
-
-    def _get_shape_description(self, n):
+    def _get_shape_description(self, point_count: int) -> str:
         """Return a string describing the shape based on number of points."""
-        if n < 3:
+        if point_count < MIN_POLYGON_POINTS:
             return "Not a polygon yet"
-        if n == 3:
+        if point_count == 3:
             return "Triangle"
-        if n == 4:
-            # We could check for rectangle here if we had the points,
-            # but for now just count vertices.
+        if point_count == 4:
             return "Quadrilateral (e.g. Rectangle)"
-        if n == 5:
+        if point_count == 5:
             return "Pentagon"
-        if n == 6:
+        if point_count == 6:
             return "Hexagon"
-        if n == 7:
+        if point_count == 7:
             return "Heptagon"
-        if n == 8:
+        if point_count == 8:
             return "Octagon"
-        return f"{n}-sided polygon"
+        return f"{point_count}-sided polygon"
+
+    def _validate_point(
+        self, latitude: Any, longitude: Any
+    ) -> tuple[dict[str, str], list[float] | None]:
+        """Validate a polygon point."""
+        errors: dict[str, str] = {}
+
+        try:
+            lat = float(latitude)
+        except (TypeError, ValueError):
+            errors[CONF_LATITUDE] = "invalid_latitude"
+        else:
+            if not -90 <= lat <= 90:
+                errors[CONF_LATITUDE] = "invalid_latitude"
+
+        try:
+            lon = float(longitude)
+        except (TypeError, ValueError):
+            errors[CONF_LONGITUDE] = "invalid_longitude"
+        else:
+            if not -180 <= lon <= 180:
+                errors[CONF_LONGITUDE] = "invalid_longitude"
+
+        if errors:
+            return errors, None
+
+        return errors, [lat, lon]
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -66,8 +90,10 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not trackers:
                 errors[CONF_TRACKERS] = "empty_trackers"
             else:
+                await self.async_set_unique_id(slugify(user_input[CONF_NAME]))
+                self._abort_if_unique_id_configured()
                 self._data = user_input
-                self._points = []  # Reset points
+                self._points = []
                 return await self.async_step_point()
 
         return self.async_show_form(
@@ -78,13 +104,15 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_TRACKERS): selector.EntitySelector(
                         selector.EntitySelectorConfig(
                             domain=["device_tracker", "person"],
-                            multiple=True
+                            multiple=True,
                         )
                     ),
-                    vol.Required(CONF_ZONE_TYPE, default=ZONE_TYPE_POLYGON): selector.SelectSelector(
+                    vol.Required(
+                        CONF_ZONE_TYPE, default=ZONE_TYPE_POLYGON
+                    ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=[ZONE_TYPE_POLYGON],
-                            mode=selector.SelectSelectorMode.DROPDOWN
+                            mode=selector.SelectSelectorMode.DROPDOWN,
                         )
                     ),
                 }
@@ -98,75 +126,50 @@ class CustomZoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle adding a point."""
         errors: dict[str, str] = {}
 
-        # Process input from previous submission
         if user_input is not None:
-            lat = user_input.get(CONF_LATITUDE)
-            lon = user_input.get(CONF_LONGITUDE)
             finished = user_input.get("finished", False)
-
-            # Validate lat/lon just in case
-            try:
-                point = [float(lat), float(lon)]
+            errors, point = self._validate_point(
+                user_input.get(CONF_LATITUDE),
+                user_input.get(CONF_LONGITUDE),
+            )
+            if not errors and point is not None:
                 self._points.append(point)
-            except (ValueError, TypeError):
-                errors["base"] = "invalid_coord"
 
             if not errors:
-                if len(self._points) >= 15:
+                if len(self._points) >= MAX_POLYGON_POINTS:
                     finished = True
 
                 if finished:
-                    if len(self._points) < 3:
+                    if len(self._points) < MIN_POLYGON_POINTS:
                         errors["base"] = "not_enough_points"
-                        # Start over? Or just show error and keep points?
-                        # Showing error will re-show form.
                     else:
-                        # Success
                         self._data[CONF_COORDINATES] = json.dumps(self._points)
-                        return self.async_create_entry(title=self._data[CONF_NAME], data=self._data)
-
-        # Check if we hit limit after error or normal flow
-        # If we have 15 points, we shouldn't ask for a 16th.
-        # But the loop above handles adding.
-        # If we are here, we are about to ask for point N+1.
-        # If N=15, we can't ask for more.
+                        return self.async_create_entry(
+                            title=self._data[CONF_NAME],
+                            data=self._data,
+                        )
 
         current_count = len(self._points)
-        if current_count >= 15:
-             # This case should be handled by the 'finished' logic above unless user manually manipulated requests.
-             # Force finish if somehow we are here.
-             if current_count >= 3:
-                 self._data[CONF_COORDINATES] = json.dumps(self._points)
-                 return self.async_create_entry(title=self._data[CONF_NAME], data=self._data)
-             else:
-                 errors["base"] = "not_enough_points"
+        if current_count >= MAX_POLYGON_POINTS:
+            self._data[CONF_COORDINATES] = json.dumps(self._points)
+            return self.async_create_entry(
+                title=self._data[CONF_NAME],
+                data=self._data,
+            )
 
-        next_point_idx = current_count + 1
-
-        # Requirement: "show a count of the co-ords entered so far incrementing up to 15; 1/15 2/15 3/15 and so on."
-        # next_point_idx represents the point we are about to enter.
-        status_msg = f"Point {next_point_idx}/15"
-        shape_desc = self._get_shape_description(current_count)
-
-        schema = {
+        schema: dict[vol.Marker, object] = {
             vol.Required(CONF_LATITUDE): float,
             vol.Required(CONF_LONGITUDE): float,
         }
-
-        # Only show "Finish" option if we have at least 2 points (so this will be the 3rd)
-        # Or maybe allow finishing anytime but error if < 3?
-        # Better to only show "Finish" if current_count >= 2.
-        # Actually, user might want to stop early? No, min 3.
-
-        if current_count >= 2:
-             schema[vol.Optional("finished", default=False)] = bool
+        if current_count >= MIN_POLYGON_POINTS - 1:
+            schema[vol.Optional("finished", default=False)] = bool
 
         return self.async_show_form(
             step_id="point",
             data_schema=vol.Schema(schema),
             errors=errors,
             description_placeholders={
-                "status_msg": status_msg,
-                "shape_desc": shape_desc
-            }
+                "status_msg": f"Point {current_count + 1}/{MAX_POLYGON_POINTS}",
+                "shape_desc": self._get_shape_description(current_count),
+            },
         )
