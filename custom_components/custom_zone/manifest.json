@@ -1,7 +1,7 @@
 {
   "domain": "custom_zone",
   "name": "Custom Zone",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/polaralias/homeassistant-customzones",
   "issue_tracker": "https://github.com/polaralias/homeassistant-customzones/issues",
   "description": "A custom component to create and configure polygon based zones.",

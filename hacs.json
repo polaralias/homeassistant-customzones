@@ -1,5 +1,6 @@
 {
   "name": "Custom Zone",
+  "domains": ["custom_zone"],
   "content_type": "integration",
   "render_readme": true
 }

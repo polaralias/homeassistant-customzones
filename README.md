@@ -1,4 +1,4 @@
-# <img src="logo.png" width="50" height="50" align="center"> Custom Zone
+# <img src="custom_components/custom_zone/brand/logo.png" width="50" height="50" align="center"> Custom Zone
 
 Custom Zone is a Home Assistant custom component that lets you define polygon-based zones and track whether one or more `person` or `device_tracker` entities are inside them. Unlike Home Assistant's built-in circular zones, Custom Zone supports arbitrary shapes defined by latitude/longitude points.
 
