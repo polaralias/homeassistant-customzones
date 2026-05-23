@@ -1,15 +1,51 @@
-# <img src="custom_components/custom_zone/brand/logo.png" width="50" height="50" align="center"> Custom Zone
+# Custom Zone
 
-Custom Zone is a Home Assistant custom component that lets you define polygon-based zones and track whether one or more `person` or `device_tracker` entities are inside them. Unlike Home Assistant's built-in circular zones, Custom Zone supports arbitrary shapes defined by latitude/longitude points.
+Custom Zone is a Home Assistant custom integration for polygon-based zones.
 
-## Features
+It lets a user:
 
-- **Polygon Zones**: Define custom shapes with 3 to 15 points.
-- **Multi-tracker Support**: Monitor up to 10 `person` or `device_tracker` entities in one zone.
-- **Interactive Configuration**: Build the polygon point by point through the UI.
-- **Dynamic Feedback**: See the point count and current polygon type while you configure the zone.
-- **Availability-aware State**: If any selected tracker stops providing usable coordinates, the sensor becomes unavailable instead of reporting a false zone exit.
-- **Rich Attributes**: Exposes aggregate counts, unavailable trackers, and per-tracker status details.
+- define an arbitrary polygon in the Home Assistant UI
+- attach one or more `person` or `device_tracker` entities to that polygon
+- expose a single sensor that reports how many tracked entities are currently counted inside the zone
+
+## Repository status
+
+This repository is now in a publish-ready state:
+
+- the product contract is explicit
+- the main runtime and lifecycle behavior is test-defended
+- the active docs describe current verified behavior
+- no active code-versus-contract delta remains
+
+## Start here
+
+Read these in order:
+
+1. [AGENTS.md](AGENTS.md)
+2. [ARCHITECTURE.md](ARCHITECTURE.md)
+3. [docs/PRODUCT_SENSE.md](docs/PRODUCT_SENSE.md)
+4. [docs/RELIABILITY.md](docs/RELIABILITY.md)
+5. [docs/SECURITY.md](docs/SECURITY.md)
+6. [docs/product-specs/custom-zone-contract.md](docs/product-specs/custom-zone-contract.md)
+7. [GLOSSARY.md](GLOSSARY.md)
+8. [CODEBASE_MAP.md](CODEBASE_MAP.md)
+9. [CONTRACT_DELTA.md](CONTRACT_DELTA.md)
+10. [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md)
+11. [docs/PLANS.md](docs/PLANS.md)
+
+Supporting status docs:
+
+- [docs/QUALITY_SCORE.md](docs/QUALITY_SCORE.md)
+- [docs/exec-plans/tech-debt-tracker.md](docs/exec-plans/tech-debt-tracker.md)
+
+## Verified local baseline
+
+The current local publish baseline is:
+
+- `python -m ruff check .`
+- `python -m pytest -q`
+
+The current test suite passes with 48 tests.
 
 ## Installation
 
@@ -22,61 +58,57 @@ Custom Zone is a Home Assistant custom component that lets you define polygon-ba
 5. Install **Custom Zone**.
 6. Restart Home Assistant.
 
-### Manual Installation
+### Manual installation
 
 1. Copy `custom_components/custom_zone` into your Home Assistant `config/custom_components/` directory.
 2. Restart Home Assistant.
 
-## Configuration
+## Verified user-visible behavior
 
-Configuration is done entirely through the Home Assistant UI.
+Configuration is done through the Home Assistant UI.
 
-1. Go to **Settings** > **Devices & Services**.
-2. Click **Add Integration**.
-3. Search for **Custom Zone**.
-4. Enter a unique zone name.
-5. Select one or more `person` or `device_tracker` entities.
-6. Add polygon points one at a time:
-   - Enter **Latitude** and **Longitude** values.
-   - Coordinates are validated to stay within valid geographic ranges.
-   - After the second point, the **Finished adding points** checkbox appears so you can complete the polygon once you have at least 3 points.
-   - The flow stops automatically after 15 points.
+Verified flow:
 
-## Usage
+1. Add the **Custom Zone** integration.
+2. Enter a non-empty unique zone name.
+3. Select one or more `person` or `device_tracker` entities.
+4. Add polygon points one at a time.
+5. Finish once at least 3 distinct valid points exist.
+6. Use the integration options flow to rename the zone, change trackers, or edit the polygon in place later.
 
-After configuration, the integration creates:
+The integration creates one aggregate sensor per zone:
 
-- `sensor.customzone_<person>_<zone>` for single-tracker zones
-- `sensor.customzone_<zone>` for multi-tracker zones
+- `sensor.customzone_<zone>`
 
-### State
+The aggregate sensor state grammar is stable:
 
-- **`<count> in zone`**: The number of configured trackers currently inside the polygon.
-- **`all out of zone`**: All trackers with usable coordinates are outside the polygon.
-- **`unavailable`**: At least one configured tracker has no usable location data.
+- `<count> in zone`
 
-### Attributes
+Stable aggregate attributes:
 
-- `trackers`: The configured entity IDs.
-- `polygon`: A list of `[latitude, longitude]` pairs defining the zone.
-- `trackers_in_zone`: Trackers confirmed inside the polygon.
-- `trackers_out_zone`: Trackers confirmed outside the polygon.
-- `trackers_unavailable`: Trackers that are unavailable, missing coordinates, or reporting invalid coordinates.
-- `count_in_zone`, `count_out_zone`, `count_unavailable`: Aggregate counts.
-- `<slugified_entity_id>_in_zone`, `<slugified_entity_id>_distance`, `<slugified_entity_id>_status`: Per-tracker attributes keyed by the full entity ID, avoiding collisions between `person` and `device_tracker` entities with the same object ID.
+- `count_in_zone`
+- `count_out_of_zone`
+- `count_unusable`
+- `trackers_in_zone`
+- `trackers_out_of_zone`
+- `trackers_unusable`
+- `trackers_detail`
 
-### Example Automation
+Current counting rules:
 
-```yaml
-automation:
-  - alias: "Notify when someone enters custom zone"
-    trigger:
-      - platform: state
-        entity_id: sensor.customzone_driveway
-        from: "all out of zone"
-        to: "1 in zone"
-    action:
-      - service: notify.mobile_app_my_phone
-        data:
-          message: "A tracker has entered the custom zone."
-```
+- boundary points are geometrically inside
+- tracker degradation does not collapse aggregate availability
+- a tracker without usable `gps_accuracy` is not counted
+- a stale tracker fix older than 5 minutes is not counted
+- a low-confidence near-boundary fix is not counted even when geometry alone says inside
+
+## Accepted limitations
+
+- Polygon editing in the options flow supports keeping the current polygon, appending points, removing the last point and continuing, or replacing the full polygon. There is still no arbitrary point-level inline editor or map-based polygon editor.
+- Geometry is intentionally implemented in-repo rather than through an external geometry dependency. Future changes to polygon math should be treated as contract changes and kept test-defended.
+
+## Release approach
+
+- Patch releases should be used for documentation, verification, packaging, and non-breaking behavioral fixes.
+- Minor releases should be used for additive behavior that does not change entity identity, state grammar, or stable attribute names.
+- Major releases should be reserved for intentional breaking contract changes such as entity ID, state grammar, or stable attribute compatibility changes.

@@ -1,9 +1,9 @@
 """Sensor platform for Custom Zone."""
 from __future__ import annotations
 
-import json
 import logging
 import math
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
@@ -18,6 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
 from .const import (
@@ -36,6 +37,19 @@ TRACKER_STATUS_NO_COORDINATES = "no_coordinates"
 TRACKER_STATUS_TRACKED = "tracked"
 TRACKER_STATUS_UNAVAILABLE = "unavailable"
 
+TRACKER_CLASSIFICATION_COUNTED_IN_ZONE = "counted_in_zone"
+TRACKER_CLASSIFICATION_COUNTED_OUT_OF_ZONE = "counted_out_of_zone"
+TRACKER_CLASSIFICATION_UNUSABLE = "unusable"
+
+DIAGNOSTIC_CONFIDENCE_DATA_INVALID = "confidence_data_invalid"
+DIAGNOSTIC_CONFIDENCE_DATA_MISSING = "confidence_data_missing"
+DIAGNOSTIC_CONFIDENCE_FAILURE = "confidence_failure"
+DIAGNOSTIC_STALE_LOCATION = "stale_location"
+DIAGNOSTIC_TRACKER_UNAVAILABLE = "tracker_unavailable"
+
+CONFIDENCE_SAFETY_MARGIN_FACTOR = 0.75
+STALE_LOCATION_THRESHOLD = timedelta(minutes=5)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -53,7 +67,7 @@ async def async_setup_entry(
         trackers = [trackers]
 
     try:
-        coords = json.loads(entry.data[CONF_COORDINATES])
+        coords = _parse_polygon_coords(entry.data[CONF_COORDINATES])
     except (TypeError, ValueError) as err:
         _LOGGER.error("Invalid polygon data for Custom Zone %s: %s", name, err)
         return
@@ -64,6 +78,32 @@ async def async_setup_entry(
 
     _LOGGER.debug("Setting up Custom Zone: %s for trackers %s", name, trackers)
     async_add_entities([CustomZoneSensor(entry.entry_id, name, trackers, coords)], True)
+
+
+def _parse_polygon_coords(raw_coords: Any) -> list[list[float]]:
+    """Return polygon coordinates from structured stored data."""
+    if not isinstance(raw_coords, list):
+        raise TypeError("Polygon coordinates must be a list")
+
+    normalized_coords: list[list[float]] = []
+    for point in raw_coords:
+        if not isinstance(point, list | tuple) or len(point) != 2:
+            raise ValueError("Polygon points must be two-item coordinate pairs")
+
+        try:
+            latitude = float(point[0])
+            longitude = float(point[1])
+        except (TypeError, ValueError) as err:
+            raise ValueError("Polygon points must contain numeric coordinates") from err
+
+        if not -90 <= latitude <= 90:
+            raise ValueError("Polygon latitude must be between -90 and 90")
+        if not -180 <= longitude <= 180:
+            raise ValueError("Polygon longitude must be between -180 and 180")
+
+        normalized_coords.append([latitude, longitude])
+
+    return normalized_coords
 
 
 class CustomZoneSensor(SensorEntity):
@@ -86,11 +126,7 @@ class CustomZoneSensor(SensorEntity):
         self._is_available = False
 
         zone_slug = slugify(name)
-        if len(self._tracker_entity_ids) == 1:
-            device_identifier = self._tracker_entity_ids[0].split(".")[-1]
-            self.entity_id = f"sensor.customzone_{slugify(device_identifier)}_{zone_slug}"
-        else:
-            self.entity_id = f"sensor.customzone_{zone_slug}"
+        self.entity_id = f"sensor.customzone_{zone_slug}"
 
         self._tracker_data: dict[str, dict[str, Any]] = {
             entity_id: {
@@ -100,6 +136,11 @@ class CustomZoneSensor(SensorEntity):
                 "in_zone": None,
                 "distance": None,
                 "status": TRACKER_STATUS_UNAVAILABLE,
+                "classification": TRACKER_CLASSIFICATION_UNUSABLE,
+                "diagnostic_reason": DIAGNOSTIC_TRACKER_UNAVAILABLE,
+                "counted_in_zone": None,
+                "trusted_distance_m": None,
+                "gps_accuracy_m": None,
             }
             for entity_id in self._tracker_entity_ids
         }
@@ -108,11 +149,12 @@ class CustomZoneSensor(SensorEntity):
             "trackers": self._tracker_entity_ids,
             "polygon": polygon_coords,
             "trackers_in_zone": [],
-            "trackers_out_zone": [],
-            "trackers_unavailable": self._tracker_entity_ids.copy(),
+            "trackers_out_of_zone": [],
+            "trackers_unusable": self._tracker_entity_ids.copy(),
             "count_in_zone": 0,
-            "count_out_zone": 0,
-            "count_unavailable": len(self._tracker_entity_ids),
+            "count_out_of_zone": 0,
+            "count_unusable": len(self._tracker_entity_ids),
+            "trackers_detail": {},
         }
         self._attr_icon = "mdi:map-marker-polygon"
         self._update_state_and_attributes()
@@ -129,8 +171,6 @@ class CustomZoneSensor(SensorEntity):
             return None
 
         count = len(self._trackers_inside)
-        if count == 0:
-            return "all out of zone"
         return f"{count} in zone"
 
     @property
@@ -166,17 +206,29 @@ class CustomZoneSensor(SensorEntity):
         new_state = event.data.get("new_state")
         self._handle_tracker_state_update(entity_id, new_state)
 
-    def _clear_tracker_state(self, entity_id: str, status: str) -> None:
-        """Clear tracker data when a usable location is not available."""
+    def _mark_tracker_unusable(
+        self,
+        entity_id: str,
+        *,
+        status: str,
+        diagnostic_reason: str,
+        gps_accuracy_m: float | None = None,
+    ) -> None:
+        """Store an unusable tracker state with its diagnostic reason."""
         self._trackers_inside.discard(entity_id)
         self._tracker_data[entity_id].update(
             {
                 "lat": None,
                 "lon": None,
-                "accuracy": None,
+                "accuracy": gps_accuracy_m,
                 "in_zone": None,
                 "distance": None,
                 "status": status,
+                "classification": TRACKER_CLASSIFICATION_UNUSABLE,
+                "diagnostic_reason": diagnostic_reason,
+                "counted_in_zone": None,
+                "trusted_distance_m": None,
+                "gps_accuracy_m": gps_accuracy_m,
             }
         )
 
@@ -192,7 +244,11 @@ class CustomZoneSensor(SensorEntity):
 
         if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             _LOGGER.debug("Tracker %s is unavailable or unknown", entity_id)
-            self._clear_tracker_state(entity_id, TRACKER_STATUS_UNAVAILABLE)
+            self._mark_tracker_unusable(
+                entity_id,
+                status=TRACKER_STATUS_UNAVAILABLE,
+                diagnostic_reason=DIAGNOSTIC_TRACKER_UNAVAILABLE,
+            )
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
@@ -204,7 +260,11 @@ class CustomZoneSensor(SensorEntity):
 
         if lat is None or lon is None:
             _LOGGER.debug("Tracker %s has no coordinates", entity_id)
-            self._clear_tracker_state(entity_id, TRACKER_STATUS_NO_COORDINATES)
+            self._mark_tracker_unusable(
+                entity_id,
+                status=TRACKER_STATUS_NO_COORDINATES,
+                diagnostic_reason=DIAGNOSTIC_CONFIDENCE_DATA_MISSING,
+            )
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
@@ -215,15 +275,63 @@ class CustomZoneSensor(SensorEntity):
             longitude = float(lon)
         except (TypeError, ValueError):
             _LOGGER.warning("Invalid coordinates for tracker %s", entity_id)
-            self._clear_tracker_state(entity_id, TRACKER_STATUS_INVALID_COORDINATES)
+            self._mark_tracker_unusable(
+                entity_id,
+                status=TRACKER_STATUS_INVALID_COORDINATES,
+                diagnostic_reason=DIAGNOSTIC_CONFIDENCE_DATA_INVALID,
+            )
+            if fire_update:
+                self._update_state_and_attributes()
+                self.async_write_ha_state()
+            return
+
+        if self._is_stale(new_state):
+            stale_accuracy_m, _ = self._parse_accuracy_meters(accuracy)
+            self._mark_tracker_unusable(
+                entity_id,
+                status=DIAGNOSTIC_STALE_LOCATION,
+                diagnostic_reason=DIAGNOSTIC_STALE_LOCATION,
+                gps_accuracy_m=stale_accuracy_m,
+            )
+            if fire_update:
+                self._update_state_and_attributes()
+                self.async_write_ha_state()
+            return
+
+        accuracy_m, accuracy_reason = self._parse_accuracy_meters(accuracy)
+        if accuracy_reason is not None:
+            self._mark_tracker_unusable(
+                entity_id,
+                status=accuracy_reason,
+                diagnostic_reason=accuracy_reason,
+            )
             if fire_update:
                 self._update_state_and_attributes()
                 self.async_write_ha_state()
             return
 
         is_inside = self._point_in_polygon(latitude, longitude)
-        accuracy_m = self._parse_accuracy_meters(accuracy)
         boundary_distance_m = self._distance_to_polygon_meters(latitude, longitude)
+        trusted_distance_m = round(boundary_distance_m, 2) if boundary_distance_m is not None else None
+        confidence_limit_m = boundary_distance_m * CONFIDENCE_SAFETY_MARGIN_FACTOR
+
+        if accuracy_m is None or boundary_distance_m is None or accuracy_m > confidence_limit_m:
+            self._mark_tracker_unusable(
+                entity_id,
+                status=DIAGNOSTIC_CONFIDENCE_FAILURE,
+                diagnostic_reason=DIAGNOSTIC_CONFIDENCE_FAILURE,
+                gps_accuracy_m=accuracy_m,
+            )
+            if fire_update:
+                self._update_state_and_attributes()
+                self.async_write_ha_state()
+            return
+
+        classification = (
+            TRACKER_CLASSIFICATION_COUNTED_IN_ZONE
+            if is_inside
+            else TRACKER_CLASSIFICATION_COUNTED_OUT_OF_ZONE
+        )
 
         self._tracker_data[entity_id].update(
             {
@@ -231,8 +339,13 @@ class CustomZoneSensor(SensorEntity):
                 "lon": longitude,
                 "accuracy": accuracy_m,
                 "in_zone": is_inside,
-                "distance": round(boundary_distance_m, 2) if boundary_distance_m is not None else None,
+                "distance": trusted_distance_m,
                 "status": TRACKER_STATUS_TRACKED,
+                "classification": classification,
+                "diagnostic_reason": None,
+                "counted_in_zone": is_inside,
+                "trusted_distance_m": trusted_distance_m,
+                "gps_accuracy_m": accuracy_m,
             }
         )
 
@@ -250,38 +363,43 @@ class CustomZoneSensor(SensorEntity):
         in_zone = sorted(
             entity_id
             for entity_id, data in self._tracker_data.items()
-            if data["in_zone"] is True
+            if data["classification"] == TRACKER_CLASSIFICATION_COUNTED_IN_ZONE
         )
         out_zone = sorted(
             entity_id
             for entity_id, data in self._tracker_data.items()
-            if data["in_zone"] is False
+            if data["classification"] == TRACKER_CLASSIFICATION_COUNTED_OUT_OF_ZONE
         )
         unavailable = sorted(
             entity_id
             for entity_id, data in self._tracker_data.items()
-            if data["status"] != TRACKER_STATUS_TRACKED
+            if data["classification"] == TRACKER_CLASSIFICATION_UNUSABLE
         )
 
         self._trackers_inside = set(in_zone)
-        self._is_available = not unavailable
+        self._is_available = True
+        trackers_detail = {
+            entity_id: {
+                "classification": data["classification"],
+                "diagnostic_reason": data["diagnostic_reason"],
+                "counted_in_zone": data["counted_in_zone"],
+                "trusted_distance_m": data["trusted_distance_m"],
+                "gps_accuracy_m": data["gps_accuracy_m"],
+            }
+            for entity_id, data in self._tracker_data.items()
+        }
 
         self._attr_extra_state_attributes.update(
             {
                 "trackers_in_zone": in_zone,
-                "trackers_out_zone": out_zone,
-                "trackers_unavailable": unavailable,
+                "trackers_out_of_zone": out_zone,
+                "trackers_unusable": unavailable,
                 "count_in_zone": len(in_zone),
-                "count_out_zone": len(out_zone),
-                "count_unavailable": len(unavailable),
+                "count_out_of_zone": len(out_zone),
+                "count_unusable": len(unavailable),
+                "trackers_detail": trackers_detail,
             }
         )
-
-        for entity_id, data in self._tracker_data.items():
-            prefix = slugify(entity_id)
-            self._attr_extra_state_attributes[f"{prefix}_in_zone"] = data["in_zone"]
-            self._attr_extra_state_attributes[f"{prefix}_distance"] = data["distance"]
-            self._attr_extra_state_attributes[f"{prefix}_status"] = data["status"]
 
     def _point_in_polygon(self, lat, lon):
         """Check if point (lat, lon) is inside the polygon."""
@@ -327,16 +445,25 @@ class CustomZoneSensor(SensorEntity):
         return inside
 
     def _parse_accuracy_meters(self, accuracy):
-        """Return accuracy in meters if valid."""
+        """Return parsed accuracy meters and a diagnostic reason when unusable."""
         if accuracy is None:
-            return None
+            return None, DIAGNOSTIC_CONFIDENCE_DATA_MISSING
         try:
             accuracy_m = float(accuracy)
         except (TypeError, ValueError):
-            return None
+            return None, DIAGNOSTIC_CONFIDENCE_DATA_INVALID
         if accuracy_m <= 0:
-            return None
-        return accuracy_m
+            return None, DIAGNOSTIC_CONFIDENCE_DATA_INVALID
+        return accuracy_m, None
+
+    def _is_stale(self, state: Any) -> bool:
+        """Return True when the tracker location is older than the staleness threshold."""
+        last_updated = getattr(state, "last_updated", None)
+        if last_updated is None:
+            return False
+
+        now = dt_util.utcnow()
+        return now - last_updated > STALE_LOCATION_THRESHOLD
 
     def _distance_to_polygon_meters(self, lat, lon):
         """Return minimum distance in meters from point to polygon boundary."""

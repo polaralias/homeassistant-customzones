@@ -5,8 +5,9 @@
   "documentation": "https://github.com/polaralias/homeassistant-customzones",
   "issue_tracker": "https://github.com/polaralias/homeassistant-customzones/issues",
   "description": "A custom component to create and configure polygon based zones.",
-  "codeowners": [],
+  "codeowners": ["@polaralias"],
+  "integration_type": "helper",
   "requirements": [],
-  "iot_class": "local_push",
+  "iot_class": "calculated",
   "config_flow": true
 }

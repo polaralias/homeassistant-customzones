@@ -1,0 +1,26 @@
+Home Assistant custom integration repository reference
+
+Purpose:
+- Quick orientation for automated tooling or future maintainers.
+
+Current repo identity:
+- Domain: custom_zone
+- Product: polygon-based zone tracking for Home Assistant
+- Primary runtime files:
+  - custom_components/custom_zone/config_flow.py
+  - custom_components/custom_zone/sensor.py
+
+Canonical docs:
+- README.md
+- ARCHITECTURE.md
+- docs/product-specs/custom-zone-contract.md
+- docs/RELIABILITY.md
+- docs/SECURITY.md
+- docs/QUALITY_SCORE.md
+- CODEBASE_MAP.md
+- AUDIT_CHECKLIST.md
+
+Operating stance:
+- Do not assume code is correct because it exists.
+- Define contract before refactor.
+- Treat geometry and availability semantics as core product concerns.
