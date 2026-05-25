@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="custom_components/custom_zone/brand/logo.png" alt="Custom Zone logo" width="320" />
+</p>
+
 # Custom Zone
 
 Custom Zone is a Home Assistant custom integration for polygon-based zones.
@@ -53,7 +57,7 @@ The current test suite passes with 48 tests.
 
 1. Go to **HACS** > **Integrations**.
 2. Open the three-dot menu and choose **Custom repositories**.
-3. Add the repository URL.
+3. Add this repository URL.
 4. Choose **Integration** as the category.
 5. Install **Custom Zone**.
 6. Restart Home Assistant.
