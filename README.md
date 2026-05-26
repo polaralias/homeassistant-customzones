@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="custom_components/custom_zone/brand/logo.png" alt="Custom Zone logo" width="320" />
+  <img src="CustomZones%20Banner.png" alt="CustomZones banner" width="960" />
 </p>
 
 # Custom Zone
