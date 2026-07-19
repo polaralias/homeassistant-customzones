@@ -141,7 +141,7 @@ Boundary inclusion is also a reliability choice:
 - points on polygon edges count as inside
 - points on polygon vertices count as inside
 
-This reduces edge jitter and makes automation behavior more stable.
+This reduces edge jitter and makes automation behaviour more stable.
 
 ## Known reliability hotspot
 
@@ -160,7 +160,7 @@ Any change to:
 - tracker state classification
 - aggregate availability semantics
 - in-zone persistence
-- distance calculation behavior
+- distance calculation behaviour
 
 should be treated as a reliability change and should update:
 

@@ -27,7 +27,7 @@ Custom Zone exists to model places like:
 
 ## Geometry design constraint
 
-The product should optimize for ordinary user-comprehensible polygons, not for mathematically permissive authoring.
+The product should optimise for ordinary user-comprehensible polygons, not for mathematically permissive authoring.
 
 That means invalid or ambiguous shapes such as self-intersecting polygons, repeated points, and zero-length edges should be rejected rather than interpreted.
 

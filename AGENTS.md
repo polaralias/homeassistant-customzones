@@ -8,14 +8,14 @@ This repository is being converted from "mostly works" into a small, public, def
 - Treat code as implementation intent, not automatic truth.
 - Do not refactor first.
 - Lock down the product contract before redesigning internals.
-- Prefer explicit behavior rules over inferred convention.
+- Prefer explicit behaviour rules over inferred convention.
 
 ## Current repo priorities
 
 1. defend the documented product contract with stronger verification
 2. close the remaining code-versus-contract gaps in small slices
 3. keep docs, tests, and plan surfaces aligned in the same tranche
-4. improve internals only after behavior is explicit and defended
+4. improve internals only after behaviour is explicit and defended
 
 ## Where to start
 
@@ -50,7 +50,7 @@ Read in this order:
 
 ## Engineering workflow
 
-Before changing behavior:
+Before changing behaviour:
 
 1. identify the relevant contract doc
 2. identify the existing tests
@@ -58,7 +58,7 @@ Before changing behavior:
 4. make the contract more explicit if needed
 5. only then change code
 
-After changing behavior:
+After changing behaviour:
 
 1. update tests
 2. update the relevant product/reliability/security docs

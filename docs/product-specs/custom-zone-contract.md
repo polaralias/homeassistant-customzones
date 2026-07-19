@@ -116,7 +116,7 @@ Per-tracker attribute naming contract:
 
 - per-tracker attributes should be namespaced by full entity identity, not just object ID
 - `person.example` and `device_tracker.example` must remain distinguishable
-- attribute naming should optimize for collision resistance over visual brevity
+- attribute naming should optimise for collision resistance over visual brevity
 
 Stable per-tracker attribute contract:
 
@@ -183,7 +183,7 @@ Initial counting rule:
 - the same nearest-boundary-distance rule applies on both sides of the boundary
 - no area-based override should bypass the boundary-distance confidence rule
 
-Boundary behavior:
+Boundary behaviour:
 
 - a tracker on a polygon edge counts as inside the zone
 - a tracker on a polygon vertex counts as inside the zone
@@ -218,7 +218,7 @@ Polygon validity rules:
 - zero-length edges should be rejected
 - clockwise and counter-clockwise point order should be treated as equivalent
 - the product contract should treat self-intersection as invalid zone authoring, not as an advanced supported geometry case
-- the product contract should treat repeated points and zero-length edges as invalid zone authoring, not as input to silently normalize
+- the product contract should treat repeated points and zero-length edges as invalid zone authoring, not as input to silently normalise
 - users should not need to repeat the first point to close the polygon; closure is implicit
 - the product contract should not impose an arbitrary small fixed point-count ceiling such as 15 without a demonstrated product reason
 
