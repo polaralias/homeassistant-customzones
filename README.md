@@ -50,4 +50,4 @@ Start with:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [docs/RELIABILITY.md](docs/RELIABILITY.md)
 
-For repository workflow and agent-focused context, read [AGENTS.md](AGENTS.md).
+For repository workflow and agent-focussed context, read [AGENTS.md](AGENTS.md).

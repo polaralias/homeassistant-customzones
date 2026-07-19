@@ -8,7 +8,7 @@ That does not remove the need for a security posture.
 
 ## Security principles
 
-- minimize trust in malformed input
+- minimise trust in malformed input
 - validate user-provided coordinates conservatively
 - fail safely on invalid configuration data
 - avoid broad attack surface expansion without clear product need

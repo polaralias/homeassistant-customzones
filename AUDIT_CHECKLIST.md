@@ -8,7 +8,7 @@ Audit tranche complete.
 
 Principles used for this pass:
 
-- verify behavior before redesigning it
+- verify behaviour before redesigning it
 - distinguish product decisions from accidental implementation details
 - prefer small, testable claims over broad confidence statements
 
@@ -34,7 +34,7 @@ Principles used for this pass:
 ### Aggregate sensor semantics
 
 - [x] Define whether one bad tracker should make the whole sensor unavailable.
-- [x] Define expected behavior for mixed tracker states.
+- [x] Define expected behaviour for mixed tracker states.
 - [x] Define whether aggregate count should represent all configured trackers or only usable trackers.
 - [x] Define whether the sensor should ever expose partial truth instead of going unavailable.
 
@@ -49,8 +49,8 @@ Principles used for this pass:
 ### Creation flow
 
 - [x] Verify the initial config step with valid and invalid names.
-- [x] Verify empty tracker selection behavior.
-- [x] Verify tracker-count behavior without an arbitrary small fixed cap.
+- [x] Verify empty tracker selection behaviour.
+- [x] Verify tracker-count behaviour without an arbitrary small fixed cap.
 - [x] Verify the point entry flow for 1, 2, 3, and larger point counts.
 - [x] Verify that finishing with fewer than 3 points fails cleanly.
 - [x] Verify that the flow does not auto-complete at 15 points.
@@ -81,7 +81,7 @@ Migration conclusion:
 
 ## Phase 3: Geometry correctness
 
-### Core inclusion behavior
+### Core inclusion behaviour
 
 - [x] Test convex polygons beyond the current square.
 - [x] Test concave polygons.
@@ -100,7 +100,7 @@ Migration conclusion:
 - [x] Test polygons near the poles or at high latitude.
 - [x] Test polygons crossing longitude sign changes if that matters for intended use.
 
-### Distance behavior
+### Distance behaviour
 
 - [x] Define whether distance is distance to the boundary, nearest edge, or nearest vertex in degenerate cases.
 - [x] Verify units and approximation quality at multiple latitudes.
@@ -114,12 +114,12 @@ Distance conclusion:
 - inside and outside points use the same nearest-boundary interpretation
 - the current approximation is defended at representative equatorial and high-latitude cases
 
-## Phase 4: Runtime behavior
+## Phase 4: Runtime behaviour
 
 ### Tracker state changes
 
-- [x] Verify startup behavior when tracker states already exist.
-- [x] Verify startup behavior when tracker states do not yet exist.
+- [x] Verify startup behaviour when tracker states already exist.
+- [x] Verify startup behaviour when tracker states do not yet exist.
 - [x] Verify transition from inside to outside.
 - [x] Verify transition from outside to inside.
 - [x] Verify transition from tracked to unavailable.
@@ -129,11 +129,11 @@ Distance conclusion:
 
 ### Multi-tracker aggregation
 
-- [x] Verify two-trackers-inside behavior.
-- [x] Verify one-inside one-outside behavior.
-- [x] Verify one-inside one-unavailable behavior.
-- [x] Verify all-outside behavior.
-- [x] Verify all-unavailable behavior.
+- [x] Verify two-trackers-inside behaviour.
+- [x] Verify one-inside one-outside behaviour.
+- [x] Verify one-inside one-unavailable behaviour.
+- [x] Verify all-outside behaviour.
+- [x] Verify all-unavailable behaviour.
 - [x] Verify attribute counts stay consistent with tracker lists.
 
 ### Attribute contract
@@ -151,11 +151,11 @@ Distance conclusion:
 - [x] Verify translations are present and aligned with the current flow.
 - [x] Verify branding and icon surfaces exist for the current packaging posture.
 - [x] Verify the chosen `iot_class` is accurate.
-- [x] Verify unload/reload behavior.
+- [x] Verify unload/reload behaviour.
 
 ### Repository hygiene
 
-- [x] Verify README claims match actual behavior.
+- [x] Verify README claims match actual behaviour.
 - [x] Add a documented limitations section.
 - [x] Populate `codeowners`.
 - [x] Verify CI is sufficient for the intended support bar.
@@ -168,7 +168,7 @@ Distance conclusion:
 - [x] Add an architecture overview.
 - [x] Document explicit invariants and non-goals.
 - [x] Document expected entity naming and migration consequences.
-- [x] Document behavior for unavailable trackers and boundary points.
+- [x] Document behaviour for unavailable trackers and boundary points.
 
 ### Quality story
 
