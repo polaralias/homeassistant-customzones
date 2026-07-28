@@ -1,3 +1,18 @@
+---
+type: "Repository Guide"
+title: "Custom Zone"
+description: "Documents Custom Zone for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - repository-guide
+navigation:
+  role: entry-point
+  order: 10
+---
 <p align="center">
   <img src="CustomZones%20Banner.png" alt="CustomZones banner" width="960" />
 </p>
@@ -50,4 +65,8 @@ Start with:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [docs/RELIABILITY.md](docs/RELIABILITY.md)
 
-For repository workflow and agent-focused context, read [AGENTS.md](AGENTS.md).
+For repository workflow and agent-focussed context, read [AGENTS.md](AGENTS.md).
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

@@ -1,3 +1,18 @@
+---
+type: "Architecture Concept"
+title: "Codebase Map"
+description: "Documents Codebase Map for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - architecture-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Codebase Map
 
 ## Scope and stance
@@ -92,7 +107,7 @@ Important implications:
 
 ### 3. Sensor runtime
 
-`custom_components/custom_zone/sensor.py` contains nearly all application behavior.
+`custom_components/custom_zone/sensor.py` contains nearly all application behaviour.
 
 It currently does all of the following:
 
@@ -128,7 +143,7 @@ Interpretation:
 
 - geometry is hand-rolled in-repo
 - there is no external geometry dependency
-- correctness rests on the custom math and the regression tests that defend it
+- correctness rests on the custom maths and the regression tests that defend it
 
 ## Data model
 
@@ -157,7 +172,7 @@ Observed per-tracker detail fields:
 - `trusted_distance_m`
 - `gps_accuracy_m`
 
-## Verified behavior covered by tests
+## Verified behaviour covered by tests
 
 The current suite exercises:
 
@@ -172,9 +187,9 @@ The current suite exercises:
 - representative boundary-distance calculations for inside, outside, and exact-boundary cases
 - tracker degradation without aggregate outage
 - stale, unavailable, missing-accuracy, invalid-coordinate, and low-confidence tracker handling
-- mixed multi-tracker aggregate behavior including all-outside and all-unusable cases
+- mixed multi-tracker aggregate behaviour including all-outside and all-unusable cases
 - malformed stored polygon rejection
-- unload/reload lifecycle behavior
+- unload/reload lifecycle behaviour
 
 ## Accepted limitations
 
@@ -197,3 +212,7 @@ For future contributors, the fastest way to understand the repo is:
 This repository is a compact Home Assistant custom integration whose value proposition is straightforward: polygon-based zone evaluation for existing tracker entities.
 
 The codebase is small enough to stay explainable. The main ongoing responsibility is preserving the documented contract and the geometry/reliability test harness rather than expanding the architecture.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

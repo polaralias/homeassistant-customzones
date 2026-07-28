@@ -1,3 +1,18 @@
+---
+type: "Architecture Concept"
+title: "Architecture"
+description: "Documents Architecture for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - architecture-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Architecture
 
 ## Purpose
@@ -136,7 +151,7 @@ Stable aggregate attributes:
 
 ### Geometry correctness
 
-The integration uses in-repo polygon math rather than an external geometry library. That keeps distribution simple but makes correctness a core repository responsibility.
+The integration uses in-repo polygon maths rather than an external geometry library. That keeps distribution simple but makes correctness a core repository responsibility.
 
 ### Availability semantics
 
@@ -150,7 +165,7 @@ Current verified runtime posture:
 
 ### Identity stability
 
-Zone naming, unique IDs, entity IDs, and reconfiguration behavior are treated as part of the public contract, not incidental implementation details.
+Zone naming, unique IDs, entity IDs, and reconfiguration behaviour are treated as part of the public contract, not incidental implementation details.
 
 ## Non-goals for now
 
@@ -159,4 +174,8 @@ Zone naming, unique IDs, entity IDs, and reconfiguration behavior are treated as
 - speculative abstractions for future zone types
 - point-level polygon editing UI beyond Home Assistant's standard config-flow forms
 
-The repo is small enough that the correct ongoing posture is preserving explicit behavior and tests, not expanding internal structure for its own sake.
+The repo is small enough that the correct ongoing posture is preserving explicit behaviour and tests, not expanding internal structure for its own sake.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

@@ -1,3 +1,18 @@
+---
+type: "Reliability Contract"
+title: "Reliability"
+description: "Documents Reliability for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - reliability-contract
+navigation:
+  role: supporting
+  order: 100
+---
 # Reliability
 
 ## Purpose
@@ -141,7 +156,7 @@ Boundary inclusion is also a reliability choice:
 - points on polygon edges count as inside
 - points on polygon vertices count as inside
 
-This reduces edge jitter and makes automation behavior more stable.
+This reduces edge jitter and makes automation behaviour more stable.
 
 ## Known reliability hotspot
 
@@ -160,10 +175,14 @@ Any change to:
 - tracker state classification
 - aggregate availability semantics
 - in-zone persistence
-- distance calculation behavior
+- distance calculation behaviour
 
 should be treated as a reliability change and should update:
 
 - tests
 - product contract docs
 - this document
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

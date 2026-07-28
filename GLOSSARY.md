@@ -1,3 +1,18 @@
+---
+type: "Glossary Concept"
+title: "Glossary"
+description: "Documents Glossary for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - glossary-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Glossary
 
 Domain language for the Custom Zone integration. This file exists to keep product, verification, and future maintenance discussions precise.
@@ -109,7 +124,7 @@ A nested attribute structure that stores per-tracker contract data keyed by full
 _Avoid_: Flat prefixed attribute sprawl, lossy short names
 
 **Aggregate Attribute Set**:
-The stable top-level attribute set that summarizes zone counts and tracker groupings.
+The stable top-level attribute set that summarises zone counts and tracker groupings.
 _Avoid_: Ad hoc aggregate fields, uncontrolled attribute growth
 
 **Full Tracker Identity**:
@@ -144,7 +159,7 @@ _Avoid_: Any polygon-like point set, mathematically interesting shape
 - The **Confidence Surface** should preferably expose per-tracker detail through a **Tracker Detail Map**
 - The **Aggregate Sensor** should expose a stable **Aggregate Attribute Set**
 - A **Custom Zone** should be created only from a **Valid Polygon**
-- **Boundary Inclusion** means edge and vertex positions still count toward the **In-Zone Count**
+- **Boundary Inclusion** means edge and vertex positions still count towards the **In-Zone Count**
 - **Boundary Clearance** influences whether **Boundary Inclusion** is trusted enough for counting
 - An **Unusable Tracker** must not make the **Aggregate Sensor** unavailable by itself
 - A **Diagnostic Tracker Reason** may explain an **Unusable Tracker** without becoming the main public state model
@@ -198,6 +213,10 @@ _Avoid_: Any polygon-like point set, mathematically interesting shape
 - "flat compatibility aliases" could have become accidental long-term contract — resolved: the forward contract is the **Tracker Detail Map**
 - "aggregate attributes" could have grown ad hoc — resolved: the forward contract uses a stable **Aggregate Attribute Set**
 - "self-intersection" could have been treated as a supported advanced polygon case — resolved: a **Valid Polygon** excludes self-intersecting shapes
-- "repeated points" or "zero-length edges" could have been silently normalized — resolved: a **Valid Polygon** excludes those authoring errors and they should be rejected
+- "repeated points" or "zero-length edges" could have been silently normalised — resolved: a **Valid Polygon** excludes those authoring errors and they should be rejected
 - "point order" could have become a hidden correctness burden — resolved: a **Valid Polygon** treats clockwise and counter-clockwise ordering as equivalent
 - "polygon closure" could have required the user to repeat the first point — resolved: a **Valid Polygon** closes implicitly and repeated points are rejected
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

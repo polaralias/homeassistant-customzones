@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "Product Sense"
+description: "Documents Product Sense for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # Product Sense
 
 ## Why this should exist
@@ -9,7 +24,7 @@ That limitation is shape fidelity.
 Circular zones are a poor fit for many real-world spaces. A polygon can express:
 
 - a driveway without including a road
-- a garden without including a neighboring plot
+- a garden without including a neighbouring plot
 - an approach path without including an entire property
 
 ## What a good version of this product feels like
@@ -23,8 +38,8 @@ Circular zones are a poor fit for many real-world spaces. A polygon can express:
 
 - reporting a false exit because a tracker stopped publishing coordinates
 - unstable naming that breaks automations
-- undocumented edge behavior for points on boundaries
-- geometry behavior that is only accidentally correct
+- undocumented edge behaviour for points on boundaries
+- geometry behaviour that is only accidentally correct
 
 ## Product standard
 
@@ -32,4 +47,8 @@ The product should be understandable to:
 
 - a Home Assistant user installing it from HACS
 - a contributor reading the repo cold
-- an employer reviewing the public codebase as evidence of engineering judgment
+- an employer reviewing the public codebase as evidence of engineering judgement
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
