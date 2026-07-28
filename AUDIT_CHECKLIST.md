@@ -1,3 +1,18 @@
+---
+type: "Validation Evidence"
+title: "Audit Checklist"
+description: "Documents Audit Checklist for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: evidence
+verification: verified-limited
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - validation-evidence
+navigation:
+  role: reference
+  order: 200
+---
 # Audit Checklist
 
 This checklist tracks the public-readiness audit for converting the repository from "works enough" into a defensible Home Assistant integration.
@@ -186,3 +201,7 @@ The repository now has:
 - current Home Assistant packaging metadata
 - a passing local lint and test baseline
 - explicit accepted limitations instead of open-ended hardening notes
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

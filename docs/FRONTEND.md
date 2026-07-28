@@ -1,3 +1,18 @@
+---
+type: "Design Concept"
+title: "Frontend"
+description: "Documents Frontend for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - design-concept
+navigation:
+  role: supporting
+  order: 100
+---
 # Frontend
 
 ## Scope
@@ -25,3 +40,7 @@ Its frontend surface is the Home Assistant integration UI:
 - the config flow still cannot offer a graphical or arbitrary point-level polygon editor
 - translation completeness
 - whether the branding and icon path behave correctly in Home Assistant
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

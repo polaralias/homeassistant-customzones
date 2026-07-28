@@ -1,3 +1,18 @@
+---
+type: "Delivery Plan"
+title: "Plans"
+description: "Documents Plans for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - delivery-plan
+navigation:
+  role: supporting
+  order: 100
+---
 # Plans
 
 ## Active plan set
@@ -22,3 +37,7 @@ Appropriate future plan triggers:
 - a deliberate contract change
 - a Home Assistant platform change that requires adaptation
 - a regression or geometry issue that escapes the current harness
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

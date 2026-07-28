@@ -1,3 +1,18 @@
+---
+type: "Quality Standard"
+title: "Quality Score"
+description: "Documents Quality Score for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - quality-standard
+navigation:
+  role: supporting
+  order: 100
+---
 # Quality Score
 
 ## Purpose
@@ -63,3 +78,7 @@ The repository is considered done for public release when all of the following r
 - treat geometry and reliability changes as contract changes
 - update tests, docs, and manifest metadata in the same slice as behaviour changes
 - preserve a small number of strong canonical docs instead of growing note sprawl
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

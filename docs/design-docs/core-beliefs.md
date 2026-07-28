@@ -1,3 +1,18 @@
+---
+type: "Design Concept"
+title: "Core Beliefs"
+description: "Documents Core Beliefs for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - design-concept
+navigation:
+  role: supporting
+  order: 100
+---
 # Core Beliefs
 
 ## 1. False confidence is worse than visible limitation
@@ -23,3 +38,7 @@ The config flow, naming model, translations, and automation ergonomics are part 
 ## 6. Documentation should lead implementation
 
 When behaviour is important enough to defend publicly, it should exist as a clear written rule before or alongside code.
+
+## Repository knowledge
+
+- [Documentation map](../knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

@@ -1,3 +1,18 @@
+---
+type: "Glossary Concept"
+title: "Glossary"
+description: "Documents Glossary for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - glossary-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Glossary
 
 Domain language for the Custom Zone integration. This file exists to keep product, verification, and future maintenance discussions precise.
@@ -201,3 +216,7 @@ _Avoid_: Any polygon-like point set, mathematically interesting shape
 - "repeated points" or "zero-length edges" could have been silently normalised — resolved: a **Valid Polygon** excludes those authoring errors and they should be rejected
 - "point order" could have become a hidden correctness burden — resolved: a **Valid Polygon** treats clockwise and counter-clockwise ordering as equivalent
 - "polygon closure" could have required the user to repeat the first point — resolved: a **Valid Polygon** closes implicitly and repeated points are rejected
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

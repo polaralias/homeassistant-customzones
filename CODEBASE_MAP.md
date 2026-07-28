@@ -1,3 +1,18 @@
+---
+type: "Architecture Concept"
+title: "Codebase Map"
+description: "Documents Codebase Map for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - architecture-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Codebase Map
 
 ## Scope and stance
@@ -197,3 +212,7 @@ For future contributors, the fastest way to understand the repo is:
 This repository is a compact Home Assistant custom integration whose value proposition is straightforward: polygon-based zone evaluation for existing tracker entities.
 
 The codebase is small enough to stay explainable. The main ongoing responsibility is preserving the documented contract and the geometry/reliability test harness rather than expanding the architecture.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

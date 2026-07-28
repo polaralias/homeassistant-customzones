@@ -1,3 +1,18 @@
+---
+type: "Product Contract"
+title: "Custom Zone Contract"
+description: "Documents Custom Zone Contract for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - product-contract
+navigation:
+  role: foundational
+  order: 20
+---
 # Custom Zone Contract
 
 ## Purpose
@@ -265,3 +280,7 @@ Migration and editing direction:
 ## Current known ambiguity
 
 The repository has an implementation, but some of the intended rules are still not written down as formal product decisions. The audit process should close those gaps before major code changes.
+
+## Repository knowledge
+
+- [Documentation map](../knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

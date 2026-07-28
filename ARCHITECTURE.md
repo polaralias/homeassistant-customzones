@@ -1,3 +1,18 @@
+---
+type: "Architecture Concept"
+title: "Architecture"
+description: "Documents Architecture for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - architecture-concept
+navigation:
+  role: foundational
+  order: 20
+---
 # Architecture
 
 ## Purpose
@@ -160,3 +175,7 @@ Zone naming, unique IDs, entity IDs, and reconfiguration behaviour are treated a
 - point-level polygon editing UI beyond Home Assistant's standard config-flow forms
 
 The repo is small enough that the correct ongoing posture is preserving explicit behaviour and tests, not expanding internal structure for its own sake.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

@@ -1,3 +1,18 @@
+---
+type: "Product Contract"
+title: "Contract Delta"
+description: "Documents Contract Delta for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - product-contract
+navigation:
+  role: foundational
+  order: 20
+---
 # Contract Delta
 
 This file tracks the gap between the desired product contract and the current implementation.
@@ -39,3 +54,7 @@ Current implementation evidence comes primarily from:
 - Polygon edits remain form-based and do not provide arbitrary point-level or map-based editing.
 - Geometry remains an in-repo responsibility and should continue to be treated as a contract-critical area for future regression coverage.
 - Delete-and-recreate is treated as a new config-entry lifecycle. Identity preservation is guaranteed for in-place edits, not for replacement by deletion.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

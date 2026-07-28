@@ -1,3 +1,18 @@
+---
+type: "Design Concept"
+title: "Design"
+description: "Documents Design for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - design-concept
+navigation:
+  role: supporting
+  order: 100
+---
 # Design
 
 ## Design problem
@@ -74,3 +89,7 @@ Additional design choices:
 - the initial freshness threshold is `5 minutes`
 - nested per-tracker attributes are preferred over flat attribute sprawl
 - if there is no meaningful installed-user compatibility burden, the product should move forward directly to the nested structure
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

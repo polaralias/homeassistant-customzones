@@ -1,3 +1,18 @@
+---
+type: "Reliability Contract"
+title: "Reliability"
+description: "Documents Reliability for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - reliability-contract
+navigation:
+  role: supporting
+  order: 100
+---
 # Reliability
 
 ## Purpose
@@ -167,3 +182,7 @@ should be treated as a reliability change and should update:
 - tests
 - product contract docs
 - this document
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

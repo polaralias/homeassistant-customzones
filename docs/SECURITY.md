@@ -1,3 +1,18 @@
+---
+type: "Security Boundary"
+title: "Security"
+description: "Documents Security for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - security-boundary
+navigation:
+  role: foundational
+  order: 20
+---
 # Security
 
 ## Scope
@@ -42,3 +57,7 @@ Tracker entity states come from Home Assistant state. Missing or malformed coord
 ## Current note
 
 Security risk in this repository is more about input trust and safe degradation than about classic auth or internet exposure. The docs and tests should reflect that reality instead of pretending this repo has a different threat model.
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "Product Sense"
+description: "Documents Product Sense for the homeassistant-customzones repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - homeassistant-customzones
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # Product Sense
 
 ## Why this should exist
@@ -33,3 +48,7 @@ The product should be understandable to:
 - a Home Assistant user installing it from HACS
 - a contributor reading the repo cold
 - an employer reviewing the public codebase as evidence of engineering judgement
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
