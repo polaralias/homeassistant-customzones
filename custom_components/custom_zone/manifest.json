@@ -1,12 +1,12 @@
 {
   "domain": "custom_zone",
   "name": "Custom Zone",
-  "version": "1.0.0",
-  "documentation": "https://github.com/polaralias/homeassistant-customzones",
-  "issue_tracker": "https://github.com/polaralias/homeassistant-customzones/issues",
   "codeowners": ["@polaralias"],
+  "config_flow": true,
+  "documentation": "https://github.com/polaralias/homeassistant-customzones",
   "integration_type": "helper",
-  "requirements": [],
   "iot_class": "calculated",
-  "config_flow": true
+  "issue_tracker": "https://github.com/polaralias/homeassistant-customzones/issues",
+  "requirements": [],
+  "version": "1.0.0"
 }
