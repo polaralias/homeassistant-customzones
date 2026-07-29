@@ -55,16 +55,6 @@
           "finished": "Finished adding points"
         }
       }
-    },
-    "selector": {
-      "polygon_edit_mode": {
-        "options": {
-          "keep": "Keep existing polygon",
-          "append": "Append more points",
-          "remove_last": "Remove last point and continue",
-          "replace": "Replace all points"
-        }
-      }
     }
   }
 }
