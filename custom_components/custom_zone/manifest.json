@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "documentation": "https://github.com/polaralias/homeassistant-customzones",
   "issue_tracker": "https://github.com/polaralias/homeassistant-customzones/issues",
-  "description": "A custom component to create and configure polygon based zones.",
   "codeowners": ["@polaralias"],
   "integration_type": "helper",
   "requirements": [],
