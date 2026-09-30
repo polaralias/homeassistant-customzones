@@ -167,8 +167,18 @@ class _PolygonFlowMixin:
         """Return the point-entry schema."""
         current_count = len(self._points)
         schema: dict[vol.Marker, object] = {
-            vol.Required(CONF_LATITUDE): float,
-            vol.Required(CONF_LONGITUDE): float,
+            vol.Required(CONF_LATITUDE): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    step="any",
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Required(CONF_LONGITUDE): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    step="any",
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
         }
         if current_count >= MIN_POLYGON_POINTS - 1:
             schema[vol.Optional("finished", default=False)] = bool

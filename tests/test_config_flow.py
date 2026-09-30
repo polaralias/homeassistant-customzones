@@ -157,6 +157,137 @@ async def test_point_step_validates_coordinate_ranges(hass) -> None:
     assert result["errors"] == {CONF_LATITUDE: "invalid_latitude"}
 
 
+def _config_flow_handler(hass, flow_id: str):
+    """Return the in-progress config flow handler."""
+    return hass.config_entries.flow._progress[flow_id]
+
+
+def _options_flow_handler(hass, flow_id: str):
+    """Return the in-progress options flow handler."""
+    return hass.config_entries.options._progress[flow_id]
+
+
+async def test_point_one_accepts_decimal_gps_ending_in_zero(hass) -> None:
+    """Point 1 must accept real GPS decimals, including values that end in 0."""
+    flow_id = await _start_polygon_flow(hass, name="Uzhhorod")
+
+    result = await hass.config_entries.flow.async_configure(
+        flow_id,
+        user_input={
+            CONF_LATITUDE: 48.623560,
+            CONF_LONGITUDE: 22.294930,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "point"
+    assert result.get("errors") in (None, {})
+    assert "required_fields" not in str(result)
+    assert result["description_placeholders"]["status_msg"] == "Point 2"
+    assert _config_flow_handler(hass, flow_id)._points == [[48.623560, 22.294930]]
+
+
+async def test_point_one_accepts_frontend_string_coordinates(hass) -> None:
+    """Frontend JSON may deliver GPS decimals as strings, not Python floats."""
+    flow_id = await _start_polygon_flow(hass, name="String GPS")
+
+    result = await hass.config_entries.flow.async_configure(
+        flow_id,
+        user_input={
+            CONF_LATITUDE: "48.623560",
+            CONF_LONGITUDE: "22.294930",
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "point"
+    assert result.get("errors") in (None, {})
+    assert result["description_placeholders"]["status_msg"] == "Point 2"
+    assert _config_flow_handler(hass, flow_id)._points == [[48.623560, 22.294930]]
+
+
+async def test_point_one_accepts_integer_zero_coordinates(hass) -> None:
+    """JSON number 0 is a Python int; 0,0 is a valid GPS point."""
+    flow_id = await _start_polygon_flow(hass, name="Zero GPS")
+
+    result = await hass.config_entries.flow.async_configure(
+        flow_id,
+        user_input={
+            CONF_LATITUDE: 0,
+            CONF_LONGITUDE: 0,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "point"
+    assert result.get("errors") in (None, {})
+    assert "required_fields" not in str(result)
+    assert result["description_placeholders"]["status_msg"] == "Point 2"
+    assert _config_flow_handler(hass, flow_id)._points == [[0.0, 0.0]]
+
+
+async def test_options_point_one_accepts_decimal_gps_and_zero(hass) -> None:
+    """Options replace mode must accept the same GPS and zero coordinates."""
+    entry = await _setup_entry(
+        hass,
+        "Driveway",
+        ["person.alice"],
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+    )
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_NAME: "Driveway",
+            CONF_TRACKERS: ["person.alice"],
+            CONF_ZONE_TYPE: ZONE_TYPE_POLYGON,
+            "polygon_edit_mode": "replace",
+        },
+    )
+    assert result["description_placeholders"]["status_msg"] == "Point 1"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LATITUDE: 48.623560,
+            CONF_LONGITUDE: 22.294930,
+        },
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "point"
+    assert result.get("errors") in (None, {})
+    assert result["description_placeholders"]["status_msg"] == "Point 2"
+    assert _options_flow_handler(hass, result["flow_id"])._points == [[48.623560, 22.294930]]
+
+    entry = await _setup_entry(
+        hass,
+        "Zero Options",
+        ["person.alice"],
+        [[1.0, 1.0], [1.0, 2.0], [2.0, 2.0]],
+    )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_NAME: "Zero Options",
+            CONF_TRACKERS: ["person.alice"],
+            CONF_ZONE_TYPE: ZONE_TYPE_POLYGON,
+            "polygon_edit_mode": "replace",
+        },
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LATITUDE: 0,
+            CONF_LONGITUDE: 0,
+        },
+    )
+    assert result.get("errors") in (None, {})
+    assert result["description_placeholders"]["status_msg"] == "Point 2"
+    assert _options_flow_handler(hass, result["flow_id"])._points == [[0.0, 0.0]]
+
+
 async def test_tracker_selection_is_not_limited_to_ten_entities(hass) -> None:
     """The config flow should not impose an arbitrary small tracker cap."""
     trackers = [f"person.person_{index}" for index in range(11)]
