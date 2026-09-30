@@ -389,7 +389,7 @@ def _build_identity_schema(
     """Return the shared identity/trackers schema for create and edit flows."""
     schema: dict[vol.Marker, object] = {
         vol.Required(CONF_NAME, default=name_default): selector.TextSelector(),
-        vol.Required(CONF_TRACKERS, default=trackers_default): selector.EntitySelector(
+        vol.Required(CONF_TRACKERS, default=list(trackers_default or [])): selector.EntitySelector(
             selector.EntitySelectorConfig(
                 domain=["device_tracker", "person"],
                 multiple=True,

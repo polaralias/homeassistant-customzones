@@ -1,5 +1,6 @@
 """Tests for the Custom Zone config flow."""
 
+import voluptuous as vol
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -48,6 +49,17 @@ async def _setup_entry(hass, name: str, trackers: list[str], coordinates: list[l
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
+
+
+def _required_field_default(schema: vol.Schema, key: str):
+    """Return the voluptuous default for a required schema field."""
+    for marker in schema.schema:
+        if getattr(marker, "schema", None) == key:
+            default = getattr(marker, "default", vol.UNDEFINED)
+            if default is vol.UNDEFINED:
+                return vol.UNDEFINED
+            return default()
+    raise AssertionError(f"Schema is missing {key}")
 
 
 async def test_duplicate_zone_name_is_rejected(hass) -> None:
@@ -139,6 +151,68 @@ async def test_tracker_selection_is_not_limited_to_ten_entities(hass) -> None:
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "point"
+
+
+async def test_user_form_trackers_default_is_empty_list(hass) -> None:
+    """A new zone must default trackers to a list, not None (issue #18)."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    default = _required_field_default(result["data_schema"], CONF_TRACKERS)
+    assert default == []
+    assert default is not None
+
+
+async def test_user_form_omitted_trackers_does_not_fail_with_value_should_be_a_list(hass) -> None:
+    """Missing trackers must become [] and fail as empty_trackers, not a selector crash."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_NAME: "Garden",
+            CONF_ZONE_TYPE: ZONE_TYPE_POLYGON,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {CONF_TRACKERS: "empty_trackers"}
+    assert "Value should be a list" not in str(result.get("errors"))
+    assert "Value should be a list" not in str(result.get("description_placeholders"))
+
+
+async def test_user_form_accepts_person_and_device_tracker_entities(hass) -> None:
+    """Trackers may include both person and device_tracker entities."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": "user"},
+        data={
+            CONF_NAME: "School",
+            CONF_TRACKERS: ["person.alice", "device_tracker.alice_phone"],
+            CONF_ZONE_TYPE: ZONE_TYPE_POLYGON,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "point"
+
+
+async def test_options_form_preserves_existing_tracker_defaults(hass) -> None:
+    """Options Flow should prefill the current tracker list."""
+    existing = ["person.alice", "device_tracker.alice_phone"]
+    entry = await _setup_entry(
+        hass,
+        "Driveway",
+        existing,
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+    )
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+    assert _required_field_default(result["data_schema"], CONF_TRACKERS) == existing
 
 
 async def test_empty_tracker_selection_is_rejected(hass) -> None:
