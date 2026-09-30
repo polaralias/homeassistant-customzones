@@ -174,6 +174,31 @@ class _PolygonFlowMixin:
             schema[vol.Optional("finished", default=False)] = bool
         return vol.Schema(schema)
 
+    def _process_point_step(self, user_input: dict[str, Any]) -> tuple[dict[str, str], bool]:
+        """Apply one point-form submission.
+
+        If the user is finishing and at least MIN_POLYGON_POINTS are already
+        stored, ignore the submitted lat/lon. Otherwise those values would be
+        appended as an extra vertex (often the number-field default 0,0).
+        """
+        errors: dict[str, str] = {}
+        finished = bool(user_input.get("finished", False))
+        if not (finished and len(self._points) >= MIN_POLYGON_POINTS):
+            errors, point = self._validate_point(
+                user_input.get(CONF_LATITUDE),
+                user_input.get(CONF_LONGITUDE),
+            )
+            if not errors and point is not None:
+                self._points.append(point)
+
+        if errors or not finished:
+            return errors, False
+
+        polygon_error = self._validate_polygon(self._points)
+        if polygon_error is not None:
+            return {"base": polygon_error}, False
+        return {}, True
+
 
 class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Custom Zone."""
@@ -225,24 +250,13 @@ class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            finished = user_input.get("finished", False)
-            errors, point = self._validate_point(
-                user_input.get(CONF_LATITUDE),
-                user_input.get(CONF_LONGITUDE),
-            )
-            if not errors and point is not None:
-                self._points.append(point)
-
-            if not errors and finished:
-                polygon_error = self._validate_polygon(self._points)
-                if polygon_error is not None:
-                    errors["base"] = polygon_error
-                else:
-                    self._data[CONF_COORDINATES] = list(self._points)
-                    return self.async_create_entry(
-                        title=self._data[CONF_NAME],
-                        data=self._data,
-                    )
+            errors, complete = self._process_point_step(user_input)
+            if complete:
+                self._data[CONF_COORDINATES] = list(self._points)
+                return self.async_create_entry(
+                    title=self._data[CONF_NAME],
+                    data=self._data,
+                )
 
         current_count = len(self._points)
         return self.async_show_form(
@@ -335,20 +349,9 @@ class CustomZoneOptionsFlow(_PolygonFlowMixin, config_entries.OptionsFlow):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            finished = user_input.get("finished", False)
-            errors, point = self._validate_point(
-                user_input.get(CONF_LATITUDE),
-                user_input.get(CONF_LONGITUDE),
-            )
-            if not errors and point is not None:
-                self._points.append(point)
-
-            if not errors and finished:
-                polygon_error = self._validate_polygon(self._points)
-                if polygon_error is not None:
-                    errors["base"] = polygon_error
-                else:
-                    return await self._finish_update()
+            errors, complete = self._process_point_step(user_input)
+            if complete:
+                return await self._finish_update()
 
         current_count = len(self._points)
         return self.async_show_form(
