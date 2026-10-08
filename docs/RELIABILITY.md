@@ -160,6 +160,13 @@ This reduces edge jitter and makes automation behaviour more stable.
 
 ## Known reliability hotspot
 
+Polygon authoring must preserve every valid submitted coordinate, including a
+final point submitted with "Finished adding points". A finish-only submission
+omits both coordinates after at least three points are stored; partial or
+invalid coordinate submissions remain errors. Automated config-flow coverage
+defends both creation and editing so completion cannot silently alter a zone
+boundary. This is automated evidence, not a claim of live frontend validation.
+
 The main reliability hotspot is the interaction between:
 
 - tracker state quality

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "revision": 3,
+  "knowledge": [
+    {
+      "path": "docs/product-specs/custom-zone-contract.md",
+      "sources": [
+        "custom_components/custom_zone/config_flow.py",
+        "tests/test_config_flow.py",
+        "custom_components/custom_zone/strings.json",
+        "custom_components/custom_zone/translations/en.json"
+      ],
+      "verified": {
+        "verifiedAt": "2026-10-08T18:34:16.178Z",
+        "evidence": "Reviewed config-authoring completion rules against the flow, form schema, text and tests. Other target-state clauses remain unchanged; freshness receipt is not a claim of hardware or live frontend validation.",
+        "sourceIdentities": [
+          {
+            "path": "custom_components/custom_zone/config_flow.py",
+            "sha256": "6ed8d768fa3f2a3ff4a0055a3748953ef5ccb1a7786de4ebdd6eb616fc52d023"
+          },
+          {
+            "path": "custom_components/custom_zone/strings.json",
+            "sha256": "b46354ba89e00ef33ea0bad109559f384e5fd39d3ad1ef9e2c564f18826d5ce8"
+          },
+          {
+            "path": "custom_components/custom_zone/translations/en.json",
+            "sha256": "b46354ba89e00ef33ea0bad109559f384e5fd39d3ad1ef9e2c564f18826d5ce8"
+          },
+          {
+            "path": "docs/product-specs/custom-zone-contract.md",
+            "sha256": "a96dedc0427290f5f421b6173e6b2825e8f4122007387ea0637d16695c6a7a10"
+          },
+          {
+            "path": "tests/test_config_flow.py",
+            "sha256": "46cf71a921103964633f5c74042bf4199219f2e3aac16c6b0e5aeb41844a890d"
+          }
+        ]
+      }
+    },
+    {
+      "path": "docs/RELIABILITY.md",
+      "sources": [
+        "custom_components/custom_zone/config_flow.py",
+        "tests/test_config_flow.py"
+      ],
+      "verified": {
+        "verifiedAt": "2026-10-08T18:34:16.280Z",
+        "evidence": "Reviewed config-authoring completion rules against the flow, form schema, text and tests. Other target-state clauses remain unchanged; freshness receipt is not a claim of hardware or live frontend validation.",
+        "sourceIdentities": [
+          {
+            "path": "custom_components/custom_zone/config_flow.py",
+            "sha256": "6ed8d768fa3f2a3ff4a0055a3748953ef5ccb1a7786de4ebdd6eb616fc52d023"
+          },
+          {
+            "path": "docs/RELIABILITY.md",
+            "sha256": "0ca2d3dc255a8c63ef39bada3d83e6c0f20d51b54a9d34a84d0ec90bdfc1d5a1"
+          },
+          {
+            "path": "tests/test_config_flow.py",
+            "sha256": "46cf71a921103964633f5c74042bf4199219f2e3aac16c6b0e5aeb41844a890d"
+          }
+        ]
+      }
+    }
+  ]
+}
