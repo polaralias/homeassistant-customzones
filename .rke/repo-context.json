@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 3,
+  "revision": 9,
   "knowledge": [
     {
       "path": "docs/product-specs/custom-zone-contract.md",
@@ -8,11 +8,12 @@
         "custom_components/custom_zone/config_flow.py",
         "tests/test_config_flow.py",
         "custom_components/custom_zone/strings.json",
-        "custom_components/custom_zone/translations/en.json"
+        "custom_components/custom_zone/translations/en.json",
+        "tests/test_translations.py"
       ],
       "verified": {
-        "verifiedAt": "2026-10-08T18:34:16.178Z",
-        "evidence": "Reviewed config-authoring completion rules against the flow, form schema, text and tests. Other target-state clauses remain unchanged; freshness receipt is not a claim of hardware or live frontend validation.",
+        "verifiedAt": "2026-10-08T20:15:05.396Z",
+        "evidence": "Reviewed existing flow and completion regressions plus translation additions. Geometry and authoring semantics remain unchanged. HA cache tests verify en/en-GB options error messages; live UI unverified.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
@@ -20,19 +21,23 @@
           },
           {
             "path": "custom_components/custom_zone/strings.json",
-            "sha256": "b46354ba89e00ef33ea0bad109559f384e5fd39d3ad1ef9e2c564f18826d5ce8"
+            "sha256": "8b0e801c3be12b06e62d25a69c76c2db9ba64ce3524dd01d705ba5b51ccc23eb"
           },
           {
             "path": "custom_components/custom_zone/translations/en.json",
-            "sha256": "b46354ba89e00ef33ea0bad109559f384e5fd39d3ad1ef9e2c564f18826d5ce8"
+            "sha256": "8b0e801c3be12b06e62d25a69c76c2db9ba64ce3524dd01d705ba5b51ccc23eb"
           },
           {
             "path": "docs/product-specs/custom-zone-contract.md",
-            "sha256": "a96dedc0427290f5f421b6173e6b2825e8f4122007387ea0637d16695c6a7a10"
+            "sha256": "9b461d9246282f54d44c0af5fa2af875ab366d95e928c7c14f27be9cab13ad04"
           },
           {
             "path": "tests/test_config_flow.py",
             "sha256": "46cf71a921103964633f5c74042bf4199219f2e3aac16c6b0e5aeb41844a890d"
+          },
+          {
+            "path": "tests/test_translations.py",
+            "sha256": "c935b7a10078a05a3433bf534a0fe4ae29f4a08da1db6f1f244900b083c7eef2"
           }
         ]
       }

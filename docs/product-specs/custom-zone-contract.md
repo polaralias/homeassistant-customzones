@@ -287,6 +287,12 @@ Migration and editing direction:
 
 The repository has an implementation, but some of the intended rules are still not written down as formal product decisions. The audit process should close those gaps before major code changes.
 
+## Form localisation
+
+- Setup and options forms must expose readable field labels and validation errors for English and British English (`en-GB`).
+- Options validation errors must be packaged under `options.error`; the frontend does not resolve them from `config.error`.
+- Verification on 2026-10-08: automated tests exercise Home Assistant's translation cache for both locales, including invalid latitude and too-few-points options errors. Live frontend rendering remains unverified.
+
 ## Repository knowledge
 
 - [Documentation map](../knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
