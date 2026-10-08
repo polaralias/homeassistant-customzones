@@ -1,5 +1,6 @@
 """Tests for the Custom Zone config flow."""
 
+import pytest
 import voluptuous as vol
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.data_entry_flow import FlowResultType
@@ -392,11 +393,7 @@ async def test_repeated_polygon_points_are_rejected_when_finishing(hass) -> None
 
     result = await hass.config_entries.flow.async_configure(
         flow_id,
-        user_input={
-            CONF_LATITUDE: 99.0,
-            CONF_LONGITUDE: 99.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.FORM
@@ -443,22 +440,84 @@ HEXAGON_POINTS = (
 )
 
 
-async def test_finished_after_six_points_does_not_append_current_coordinates(hass) -> None:
-    """Finished on the Point 7 screen must store the hexagon, not a 7th vertex."""
+@pytest.mark.parametrize(
+    ("points", "final_point"),
+    [
+        (((0.0, 0.0), (0.0, 2.0), (2.0, 2.0)), (2.0, 0.0)),
+        (((1.0, 0.0), (1.0, 1.0), (0.0, 1.0)), (0.0, 0.0)),
+    ],
+)
+async def test_finishing_with_final_point_preserves_all_coordinates(hass, points, final_point) -> None:
+    """A final coordinate, including 0,0, must be saved when finishing."""
+    flow_id = await _start_polygon_flow(hass)
+    await _add_points(hass, flow_id, points)
+    result = await hass.config_entries.flow.async_configure(
+        flow_id,
+        user_input={CONF_LATITUDE: final_point[0], CONF_LONGITUDE: final_point[1], "finished": True},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_COORDINATES] == [list(point) for point in (*points, final_point)]
+
+
+@pytest.mark.parametrize("edit_mode", ["replace", "append"])
+async def test_options_finishing_with_final_point_preserves_all_coordinates(hass, edit_mode) -> None:
+    """Both editing paths preserve a final point submitted with Finished."""
+    points = ((0.0, 0.0), (0.0, 2.0), (2.0, 2.0))
+    entry = await _setup_entry(hass, "Square", ["person.alice"], [list(point) for point in points])
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_NAME: "Square",
+            CONF_TRACKERS: ["person.alice"],
+            CONF_ZONE_TYPE: ZONE_TYPE_POLYGON,
+            "polygon_edit_mode": edit_mode,
+        },
+    )
+    if edit_mode == "replace":
+        for latitude, longitude in points:
+            result = await hass.config_entries.options.async_configure(
+                result["flow_id"], user_input={CONF_LATITUDE: latitude, CONF_LONGITUDE: longitude}
+            )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={CONF_LATITUDE: 2.0, CONF_LONGITUDE: 0.0, "finished": True}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_COORDINATES] == [list(point) for point in points] + [[2.0, 0.0]]
+
+
+@pytest.mark.parametrize(
+    ("submission", "expected_errors"),
+    [
+        ({CONF_LATITUDE: 2.0, "finished": True}, {CONF_LONGITUDE: "invalid_longitude"}),
+        ({CONF_LATITUDE: 99.0, CONF_LONGITUDE: 0.0, "finished": True}, {CONF_LATITUDE: "invalid_latitude"}),
+        ({}, {CONF_LATITUDE: "invalid_latitude", CONF_LONGITUDE: "invalid_longitude"}),
+    ],
+)
+async def test_invalid_point_is_not_silently_discarded_when_finishing(hass, submission, expected_errors) -> None:
+    """Partial, invalid, or unfinished blank input must not save the polygon."""
+    flow_id = await _start_polygon_flow(hass)
+    points = ((0.0, 0.0), (0.0, 2.0), (2.0, 2.0))
+    await _add_points(hass, flow_id, points)
+    result = await hass.config_entries.flow.async_configure(flow_id, user_input=submission)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == expected_errors
+    assert _config_flow_handler(hass, flow_id)._points == [list(point) for point in points]
+
+
+async def test_finish_only_after_six_points_preserves_coordinates(hass) -> None:
+    """Finishing with blank coordinates stores the six entered points."""
     flow_id = await _start_polygon_flow(hass, name="Hexagon Zone")
     result = await _add_points(hass, flow_id, HEXAGON_POINTS)
 
     assert result["description_placeholders"]["status_msg"] == "Point 7"
     assert result["description_placeholders"]["shape_desc"] == "Hexagon"
     assert _schema_has_field(result["data_schema"], "finished")
+    assert result["data_schema"]({"finished": True}) == {"finished": True}
 
     result = await hass.config_entries.flow.async_configure(
         flow_id,
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -469,8 +528,8 @@ async def test_finished_after_six_points_does_not_append_current_coordinates(has
     assert "not_enough_points" not in str(result)
 
 
-async def test_finished_after_three_points_does_not_append_current_coordinates(hass) -> None:
-    """Finished after three stored points must not consume the next lat/lon."""
+async def test_finish_only_after_three_points_preserves_coordinates(hass) -> None:
+    """Finishing with blank coordinates stores the three entered points."""
     triangle = ((10.0, 10.0), (12.0, 10.0), (11.0, 12.0))
     flow_id = await _start_polygon_flow(hass, name="Triangle Zone")
     result = await _add_points(hass, flow_id, triangle)
@@ -480,11 +539,7 @@ async def test_finished_after_three_points_does_not_append_current_coordinates(h
 
     result = await hass.config_entries.flow.async_configure(
         flow_id,
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -517,11 +572,7 @@ async def test_self_intersecting_polygon_is_rejected_when_finishing(hass) -> Non
 
     result = await hass.config_entries.flow.async_configure(
         flow_id,
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.FORM
@@ -600,11 +651,7 @@ async def test_options_flow_updates_zone_in_place(hass) -> None:
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -771,11 +818,7 @@ async def test_options_flow_can_append_points_to_existing_polygon(hass) -> None:
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -822,11 +865,7 @@ async def test_options_flow_can_remove_last_point_then_continue(hass) -> None:
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_LATITUDE: 0.0,
-            CONF_LONGITUDE: 0.0,
-            "finished": True,
-        },
+        user_input={"finished": True},
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY

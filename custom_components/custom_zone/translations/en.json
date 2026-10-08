@@ -12,7 +12,7 @@
       },
       "point": {
         "title": "Add Point",
-        "description": "{status_msg}\n\nCurrent Shape: {shape_desc}",
+        "description": "{status_msg}\n\nCurrent Shape: {shape_desc}\n\nEnter coordinates to add a point. To finish, check Finished adding points. Once at least three points are stored, leave both coordinates blank to finish without adding another point.",
         "data": {
           "latitude": "Latitude",
           "longitude": "Longitude",
@@ -48,7 +48,7 @@
       },
       "point": {
         "title": "Edit Polygon",
-        "description": "Continue editing the polygon points for this zone.\n\nExisting polygon points: {existing_point_count}\n\n{status_msg}\n\nCurrent Shape: {shape_desc}",
+        "description": "Continue editing the polygon points for this zone.\n\nExisting polygon points: {existing_point_count}\n\n{status_msg}\n\nCurrent Shape: {shape_desc}\n\nEnter coordinates to add a point. To finish, check Finished adding points. Once at least three points are stored, leave both coordinates blank to finish without adding another point.",
         "data": {
           "latitude": "Latitude",
           "longitude": "Longitude",

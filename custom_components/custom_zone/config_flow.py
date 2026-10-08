@@ -166,14 +166,15 @@ class _PolygonFlowMixin:
     def _build_point_schema(self) -> vol.Schema:
         """Return the point-entry schema."""
         current_count = len(self._points)
+        coordinate_field = vol.Optional if current_count >= MIN_POLYGON_POINTS else vol.Required
         schema: dict[vol.Marker, object] = {
-            vol.Required(CONF_LATITUDE): selector.NumberSelector(
+            coordinate_field(CONF_LATITUDE): selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     step="any",
                     mode=selector.NumberSelectorMode.BOX,
                 )
             ),
-            vol.Required(CONF_LONGITUDE): selector.NumberSelector(
+            coordinate_field(CONF_LONGITUDE): selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     step="any",
                     mode=selector.NumberSelectorMode.BOX,
@@ -187,13 +188,19 @@ class _PolygonFlowMixin:
     def _process_point_step(self, user_input: dict[str, Any]) -> tuple[dict[str, str], bool]:
         """Apply one point-form submission.
 
-        If the user is finishing and at least MIN_POLYGON_POINTS are already
-        stored, ignore the submitted lat/lon. Otherwise those values would be
-        appended as an extra vertex (often the number-field default 0,0).
+        Submitted coordinates always describe a new point, including 0,0.
+        Finish without another point only when both coordinates are omitted
+        and at least MIN_POLYGON_POINTS are already stored.
         """
         errors: dict[str, str] = {}
         finished = bool(user_input.get("finished", False))
-        if not (finished and len(self._points) >= MIN_POLYGON_POINTS):
+        finish_only = (
+            finished
+            and len(self._points) >= MIN_POLYGON_POINTS
+            and CONF_LATITUDE not in user_input
+            and CONF_LONGITUDE not in user_input
+        )
+        if not finish_only:
             errors, point = self._validate_point(
                 user_input.get(CONF_LATITUDE),
                 user_input.get(CONF_LONGITUDE),

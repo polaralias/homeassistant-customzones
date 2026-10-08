@@ -226,6 +226,12 @@ Staleness rule:
 
 Polygon validity rules:
 
+- a coordinate submitted with "Finished adding points" is validated and included as the final point
+- once at least three points are stored, users may finish without another point by leaving both coordinate fields blank and checking "Finished adding points"
+- a supplied `0,0` is a real point and must not be discarded as a placeholder
+- partial or invalid coordinates must produce a form error, including when finishing
+- these completion rules apply to creation and polygon editing, including append mode
+
 - a valid polygon must contain at least 3 distinct points
 - self-intersecting polygons should be rejected
 - repeated adjacent points should be rejected
