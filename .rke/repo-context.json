@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
+  "revision": 10,
   "knowledge": [
     {
       "path": "docs/product-specs/custom-zone-contract.md",
@@ -12,8 +12,8 @@
         "tests/test_translations.py"
       ],
       "verified": {
-        "verifiedAt": "2026-10-08T20:15:05.396Z",
-        "evidence": "Reviewed existing flow and completion regressions plus translation additions. Geometry and authoring semantics remain unchanged. HA cache tests verify en/en-GB options error messages; live UI unverified.",
+        "verifiedAt": "2026-10-08T20:51:38.831Z",
+        "evidence": "Reviewed existing flow translation changes and matching manifest release version. Locale cache regression tests already pass. GitHub checks will validate updated PRs before merge; release tag provides HACS remote version.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
