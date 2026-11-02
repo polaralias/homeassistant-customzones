@@ -1,6 +1,7 @@
 """Test configuration for Custom Zone."""
 
 import asyncio
+import sys
 
 import pytest
 
@@ -17,7 +18,8 @@ def auto_enable_socket(socket_enabled):
     yield
 
 
-@pytest.fixture(scope="session")
-def event_loop_policy():
-    """Use the session scope required by current pytest-asyncio runners."""
-    return asyncio.get_event_loop_policy()
+if sys.platform == "win32":
+    @pytest.fixture
+    def event_loop_policy(socket_enabled):
+        """Allow socket access before older Windows pytest runners create a loop."""
+        return asyncio.get_event_loop_policy()
