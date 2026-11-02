@@ -26,7 +26,7 @@ This document maps the repository in its current verified state without assuming
 Verification performed for this pass:
 
 - `python -m ruff check .` passed.
-- `python -m pytest -q` passed with 48 tests.
+- Historical initial baseline: 48 tests passed. The 1.1.0 reliability suite has 90 passing tests on HA 2025.1.4 and 2026.10.4 in Linux CI.
 
 ## Project identity
 
@@ -82,7 +82,8 @@ Primary sources:
 Interpretation:
 
 - the integration has one real runtime surface today: a sensor entity
-- there is no coordinator, service layer, storage layer, or background polling loop
+- there is no coordinator, service layer or separate storage layer
+- an entity-owned 30-second timer expires stale trackers independently of state events and is cancelled on unload
 
 ### 2. Config flow
 
