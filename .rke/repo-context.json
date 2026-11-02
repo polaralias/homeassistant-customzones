@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 12,
+  "revision": 14,
   "knowledge": [
     {
       "path": "docs/product-specs/custom-zone-contract.md",
@@ -12,8 +12,8 @@
         "tests/test_translations.py"
       ],
       "verified": {
-        "verifiedAt": "2026-11-02T05:42:46.243Z",
-        "evidence": "Reviewed bound source and translation tests, retained setup/options labels, finish-only behavior and in-place editing; documented v2 migration, name uniqueness and expiry. 90 tests pass.",
+        "verifiedAt": "2026-11-02T05:59:36.912Z",
+        "evidence": "Reviewed causal candidate docs, quality requirements and regenerated task navigation; runtime map, architecture, audit, reliability and contract match migration, expiry and identity behavior. Glossary and design semantics remain valid. Ruff, Hassfest and 90 tests pass on both HA versions, with live identity-preserving migration verified.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
@@ -49,8 +49,8 @@
         "tests/test_config_flow.py"
       ],
       "verified": {
-        "verifiedAt": "2026-11-02T05:42:43.611Z",
-        "evidence": "Reviewed all bound authoring source and config flow tests; additionally documented legacy migration, scale-independent polygon boundaries and silent tracker expiry. 90 tests pass.",
+        "verifiedAt": "2026-11-02T05:59:36.036Z",
+        "evidence": "Reviewed causal candidate docs, quality requirements and regenerated task navigation; runtime map, architecture, audit, reliability and contract match migration, expiry and identity behavior. Glossary and design semantics remain valid. Ruff, Hassfest and 90 tests pass on both HA versions, with live identity-preserving migration verified.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
