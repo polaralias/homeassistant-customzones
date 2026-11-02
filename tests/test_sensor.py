@@ -600,8 +600,8 @@ async def test_documented_aggregate_attributes_are_present(hass) -> None:
         assert attribute in state.attributes
 
 
-async def test_string_coordinate_entries_are_rejected(hass) -> None:
-    """Non-structured coordinate storage should fail safely at setup time."""
+async def test_legacy_string_coordinate_entries_are_migrated(hass) -> None:
+    """A legacy JSON polygon should recover without replacing its entry."""
     hass.states.async_set(
         "person.alice",
         "home",
@@ -626,7 +626,10 @@ async def test_string_coordinate_entries_are_rejected(hass) -> None:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     state = hass.states.get("sensor.customzone_string_driveway")
-    assert state is None
+    assert state is not None
+    assert state.state == "1 in zone"
+    assert entry.version == 2
+    assert isinstance(entry.data[CONF_COORDINATES], list)
 
 
 async def test_malformed_structured_coordinate_entries_are_rejected(hass) -> None:
@@ -643,6 +646,7 @@ async def test_malformed_structured_coordinate_entries_are_rejected(hass) -> Non
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="bad-polygon",
+        version=2,
         data={
             CONF_NAME: "Bad Polygon",
             CONF_TRACKERS: ["person.alice"],

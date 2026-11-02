@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 10,
+  "revision": 14,
   "knowledge": [
     {
       "path": "docs/product-specs/custom-zone-contract.md",
@@ -12,12 +12,12 @@
         "tests/test_translations.py"
       ],
       "verified": {
-        "verifiedAt": "2026-10-08T20:51:38.831Z",
-        "evidence": "Reviewed existing flow translation changes and matching manifest release version. Locale cache regression tests already pass. GitHub checks will validate updated PRs before merge; release tag provides HACS remote version.",
+        "verifiedAt": "2026-11-02T05:59:36.912Z",
+        "evidence": "Reviewed causal candidate docs, quality requirements and regenerated task navigation; runtime map, architecture, audit, reliability and contract match migration, expiry and identity behavior. Glossary and design semantics remain valid. Ruff, Hassfest and 90 tests pass on both HA versions, with live identity-preserving migration verified.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
-            "sha256": "6ed8d768fa3f2a3ff4a0055a3748953ef5ccb1a7786de4ebdd6eb616fc52d023"
+            "sha256": "88136ae30bd38302e49dffdf605c70b5276a7e053486ea9538b55dc1eaecdfee"
           },
           {
             "path": "custom_components/custom_zone/strings.json",
@@ -29,11 +29,11 @@
           },
           {
             "path": "docs/product-specs/custom-zone-contract.md",
-            "sha256": "9b461d9246282f54d44c0af5fa2af875ab366d95e928c7c14f27be9cab13ad04"
+            "sha256": "10ae0adc5e1fc075c10c61964369a496f7e32916d2624f18eb13766ad54564c6"
           },
           {
             "path": "tests/test_config_flow.py",
-            "sha256": "46cf71a921103964633f5c74042bf4199219f2e3aac16c6b0e5aeb41844a890d"
+            "sha256": "7a0f3348b51167505a53acc51cc319616f65106edde350e2c818d491e670a57d"
           },
           {
             "path": "tests/test_translations.py",
@@ -49,20 +49,20 @@
         "tests/test_config_flow.py"
       ],
       "verified": {
-        "verifiedAt": "2026-10-08T18:34:16.280Z",
-        "evidence": "Reviewed config-authoring completion rules against the flow, form schema, text and tests. Other target-state clauses remain unchanged; freshness receipt is not a claim of hardware or live frontend validation.",
+        "verifiedAt": "2026-11-02T05:59:36.036Z",
+        "evidence": "Reviewed causal candidate docs, quality requirements and regenerated task navigation; runtime map, architecture, audit, reliability and contract match migration, expiry and identity behavior. Glossary and design semantics remain valid. Ruff, Hassfest and 90 tests pass on both HA versions, with live identity-preserving migration verified.",
         "sourceIdentities": [
           {
             "path": "custom_components/custom_zone/config_flow.py",
-            "sha256": "6ed8d768fa3f2a3ff4a0055a3748953ef5ccb1a7786de4ebdd6eb616fc52d023"
+            "sha256": "88136ae30bd38302e49dffdf605c70b5276a7e053486ea9538b55dc1eaecdfee"
           },
           {
             "path": "docs/RELIABILITY.md",
-            "sha256": "0ca2d3dc255a8c63ef39bada3d83e6c0f20d51b54a9d34a84d0ec90bdfc1d5a1"
+            "sha256": "b968997273a48b0eb45ad1c09e08f09dbf7bb025c5f1283fe75565885f647428"
           },
           {
             "path": "tests/test_config_flow.py",
-            "sha256": "46cf71a921103964633f5c74042bf4199219f2e3aac16c6b0e5aeb41844a890d"
+            "sha256": "7a0f3348b51167505a53acc51cc319616f65106edde350e2c818d491e670a57d"
           }
         ]
       }

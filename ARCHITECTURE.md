@@ -36,6 +36,7 @@ This is a compact integration with one primary runtime path:
 Integration bootstrap.
 
 - registers the `sensor` platform
+- migrates version 1 JSON or structured polygon entries into validated version 2 structured storage without replacing identity
 - forwards config entries
 - unloads and reloads the platform cleanly through Home Assistant config-entry lifecycle hooks
 
@@ -61,7 +62,7 @@ Accepted UX constraint:
 Runtime engine.
 
 - validates stored polygon coordinates before setup
-- watches tracker state changes
+- watches tracker state changes and expires silent stale trackers on a cancellable 30-second timer
 - classifies tracker state quality
 - runs polygon membership logic
 - computes boundary distance

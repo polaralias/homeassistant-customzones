@@ -92,7 +92,8 @@ Compatibility conclusion:
 
 Migration conclusion:
 
-- current runtime storage is structured coordinate lists only
+- runtime storage is structured coordinate lists; version 1 JSON text is migrated in place to version 2 before setup
+- November 2026 verification: 90 tests pass on HA 2025.1.4 and 2026.10.4, including migration, small diagonal boundaries and timer expiry; the existing live Work entry migrated without changing its entity ID
 
 ## Phase 3: Geometry correctness
 

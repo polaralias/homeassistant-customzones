@@ -389,16 +389,17 @@ async def test_empty_tracker_selection_is_rejected(hass) -> None:
 async def test_repeated_polygon_points_are_rejected_when_finishing(hass) -> None:
     """A polygon with repeated points should not be accepted."""
     flow_id = await _start_polygon_flow(hass, name="Repeated Point Zone")
-    await _add_points(hass, flow_id, ((0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (0.0, 0.0)))
+    await _add_points(hass, flow_id, ((0.0, 0.0), (0.0, 1.0), (1.0, 0.0)))
 
     result = await hass.config_entries.flow.async_configure(
         flow_id,
-        user_input={"finished": True},
+        user_input={CONF_LATITUDE: 0.0, CONF_LONGITUDE: 0.0, "finished": True},
     )
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "point"
     assert result["errors"] == {"base": "repeated_points"}
+    assert len(_config_flow_handler(hass, flow_id)._points) == 3
 
 
 async def test_finishing_with_fewer_than_three_distinct_points_fails_cleanly(hass) -> None:
