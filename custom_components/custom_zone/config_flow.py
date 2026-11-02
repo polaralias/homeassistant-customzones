@@ -1,4 +1,5 @@
 """Config flow for Custom Zone integration."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -60,13 +61,13 @@ class _PolygonFlowMixin:
             return "Octagon"
         return f"{point_count}-sided polygon"
 
-    def _validate_point(
-        self, latitude: Any, longitude: Any
-    ) -> tuple[dict[str, str], list[float] | None]:
+    def _validate_point(self, latitude: Any, longitude: Any) -> tuple[dict[str, str], list[float] | None]:
         """Validate a polygon point."""
         errors: dict[str, str] = {}
 
         try:
+            if isinstance(latitude, bool):
+                raise ValueError("Boolean coordinates are invalid")
             lat = float(latitude)
         except (TypeError, ValueError):
             errors[CONF_LATITUDE] = "invalid_latitude"
@@ -75,6 +76,8 @@ class _PolygonFlowMixin:
                 errors[CONF_LATITUDE] = "invalid_latitude"
 
         try:
+            if isinstance(longitude, bool):
+                raise ValueError("Boolean coordinates are invalid")
             lon = float(longitude)
         except (TypeError, ValueError):
             errors[CONF_LONGITUDE] = "invalid_longitude"
@@ -130,19 +133,17 @@ class _PolygonFlowMixin:
         """Return True when two closed line segments intersect."""
 
         def orientation(point_a: list[float], point_b: list[float], point_c: list[float]) -> int:
-            cross = (
-                (point_b[1] - point_a[1]) * (point_c[0] - point_b[0])
-                - (point_b[0] - point_a[0]) * (point_c[1] - point_b[1])
+            cross = (point_b[1] - point_a[1]) * (point_c[0] - point_b[0]) - (point_b[0] - point_a[0]) * (
+                point_c[1] - point_b[1]
             )
             if cross == 0:
                 return 0
             return 1 if cross > 0 else 2
 
         def on_segment(point_a: list[float], point_b: list[float], point_c: list[float]) -> bool:
-            return (
-                min(point_a[0], point_c[0]) <= point_b[0] <= max(point_a[0], point_c[0])
-                and min(point_a[1], point_c[1]) <= point_b[1] <= max(point_a[1], point_c[1])
-            )
+            return min(point_a[0], point_c[0]) <= point_b[0] <= max(point_a[0], point_c[0]) and min(
+                point_a[1], point_c[1]
+            ) <= point_b[1] <= max(point_a[1], point_c[1])
 
         first = orientation(first_start, first_end, second_start)
         second = orientation(first_start, first_end, second_end)
@@ -200,27 +201,34 @@ class _PolygonFlowMixin:
             and CONF_LATITUDE not in user_input
             and CONF_LONGITUDE not in user_input
         )
+        candidate_points = list(self._points)
         if not finish_only:
             errors, point = self._validate_point(
                 user_input.get(CONF_LATITUDE),
                 user_input.get(CONF_LONGITUDE),
             )
             if not errors and point is not None:
-                self._points.append(point)
+                if point in candidate_points:
+                    error = "not_enough_points" if finished and len(candidate_points) < 3 else "repeated_points"
+                    return {"base": error}, False
+                candidate_points.append(point)
 
         if errors or not finished:
+            if not errors:
+                self._points = candidate_points
             return errors, False
 
-        polygon_error = self._validate_polygon(self._points)
+        polygon_error = self._validate_polygon(candidate_points)
         if polygon_error is not None:
             return {"base": polygon_error}, False
+        self._points = candidate_points
         return {}, True
 
 
 class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Custom Zone."""
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -233,9 +241,7 @@ class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=
         """Return the options flow for this config entry."""
         return CustomZoneOptionsFlow()
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> config_entries.FlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -248,6 +254,11 @@ class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=
             else:
                 user_input = dict(user_input)
                 user_input[CONF_NAME] = normalized_name
+                if any(
+                    slugify(entry.data.get(CONF_NAME, "")) == slugify(normalized_name)
+                    for entry in self.hass.config_entries.async_entries(DOMAIN)
+                ):
+                    return self.async_abort(reason="already_configured")
                 await self.async_set_unique_id(slugify(user_input[CONF_NAME]))
                 self._abort_if_unique_id_configured()
                 self._data = user_input
@@ -260,9 +271,7 @@ class CustomZoneConfigFlow(_PolygonFlowMixin, config_entries.ConfigFlow, domain=
             errors=errors,
         )
 
-    async def async_step_point(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.FlowResult:
+    async def async_step_point(self, user_input: dict[str, Any] | None = None) -> config_entries.FlowResult:
         """Handle adding a point."""
         errors: dict[str, str] = {}
 
@@ -304,13 +313,12 @@ class CustomZoneOptionsFlow(_PolygonFlowMixin, config_entries.OptionsFlow):
             self.config_entry,
             title=updated_data[CONF_NAME],
             data=updated_data,
+            unique_id=slugify(updated_data[CONF_NAME]),
         )
         await self.hass.config_entries.async_reload(self.config_entry.entry_id)
         return self.async_create_entry(title="", data={})
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> config_entries.FlowResult:
         """Handle the initial edit step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -359,9 +367,7 @@ class CustomZoneOptionsFlow(_PolygonFlowMixin, config_entries.OptionsFlow):
             },
         )
 
-    async def async_step_point(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.FlowResult:
+    async def async_step_point(self, user_input: dict[str, Any] | None = None) -> config_entries.FlowResult:
         """Handle polygon editing after the chosen edit mode is applied."""
         errors: dict[str, str] = {}
 
@@ -423,10 +429,12 @@ def _build_identity_schema(
         ),
     }
     if include_polygon_edit_mode:
-        schema[vol.Required(
-            CONF_POLYGON_EDIT_MODE,
-            default=polygon_edit_mode_default,
-        )] = selector.SelectSelector(
+        schema[
+            vol.Required(
+                CONF_POLYGON_EDIT_MODE,
+                default=polygon_edit_mode_default,
+            )
+        ] = selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
                     selector.SelectOptionDict(

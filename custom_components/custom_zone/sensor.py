@@ -1,4 +1,5 @@
 """Sensor platform for Custom Zone."""
+
 from __future__ import annotations
 
 import logging
@@ -17,7 +18,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
@@ -91,6 +92,8 @@ def _parse_polygon_coords(raw_coords: Any) -> list[list[float]]:
             raise ValueError("Polygon points must be two-item coordinate pairs")
 
         try:
+            if isinstance(point[0], bool) or isinstance(point[1], bool):
+                raise ValueError("Boolean coordinates are invalid")
             latitude = float(point[0])
             longitude = float(point[1])
         except (TypeError, ValueError) as err:
@@ -192,12 +195,33 @@ class CustomZoneSensor(SensorEntity):
                 self._async_tracker_changed,
             )
         )
+        self.async_on_remove(
+            async_track_time_interval(self.hass, self._async_expire_stale_trackers, timedelta(seconds=30))
+        )
         for entity_id in self._tracker_entity_ids:
             current_state = self.hass.states.get(entity_id)
             if current_state is not None:
                 self._handle_tracker_state_update(entity_id, current_state, fire_update=False)
 
         self._update_state_and_attributes()
+
+    @callback
+    def _async_expire_stale_trackers(self, _now) -> None:
+        """Expire silent trackers even when no new state event arrives."""
+        changed = False
+        for entity_id, data in self._tracker_data.items():
+            state = self.hass.states.get(entity_id)
+            if data["classification"] != TRACKER_CLASSIFICATION_UNUSABLE and state and self._is_stale(state):
+                self._mark_tracker_unusable(
+                    entity_id,
+                    status=DIAGNOSTIC_STALE_LOCATION,
+                    diagnostic_reason=DIAGNOSTIC_STALE_LOCATION,
+                    gps_accuracy_m=data["gps_accuracy_m"],
+                )
+                changed = True
+        if changed:
+            self._update_state_and_attributes()
+            self.async_write_ha_state()
 
     @callback
     def _async_tracker_changed(self, event) -> None:
@@ -271,8 +295,12 @@ class CustomZoneSensor(SensorEntity):
             return
 
         try:
+            if isinstance(lat, bool) or isinstance(lon, bool):
+                raise ValueError("Boolean coordinates are invalid")
             latitude = float(lat)
             longitude = float(lon)
+            if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+                raise ValueError("Coordinates are outside their valid range")
         except (TypeError, ValueError):
             _LOGGER.warning("Invalid coordinates for tracker %s", entity_id)
             self._mark_tracker_unusable(
@@ -328,9 +356,7 @@ class CustomZoneSensor(SensorEntity):
             return
 
         classification = (
-            TRACKER_CLASSIFICATION_COUNTED_IN_ZONE
-            if is_inside
-            else TRACKER_CLASSIFICATION_COUNTED_OUT_OF_ZONE
+            TRACKER_CLASSIFICATION_COUNTED_IN_ZONE if is_inside else TRACKER_CLASSIFICATION_COUNTED_OUT_OF_ZONE
         )
 
         self._tracker_data[entity_id].update(
@@ -420,12 +446,17 @@ class CustomZoneSensor(SensorEntity):
                 return True
 
             # Boundary check
-            if x >= min(p1x, p2x) - COORD_TOLERANCE and x <= max(p1x, p2x) + COORD_TOLERANCE and \
-               y >= min(p1y, p2y) - COORD_TOLERANCE and y <= max(p1y, p2y) + COORD_TOLERANCE:
-                 # Collinear check
-                 cross = (y - p1y) * (p2x - p1x) - (p2y - p1y) * (x - p1x)
-                 if abs(cross) < COORD_TOLERANCE:
-                     return True
+            if (
+                x >= min(p1x, p2x) - COORD_TOLERANCE
+                and x <= max(p1x, p2x) + COORD_TOLERANCE
+                and y >= min(p1y, p2y) - COORD_TOLERANCE
+                and y <= max(p1y, p2y) + COORD_TOLERANCE
+            ):
+                # Collinear check
+                cross = (y - p1y) * (p2x - p1x) - (p2y - p1y) * (x - p1x)
+                edge_length = math.hypot(p2x - p1x, p2y - p1y)
+                if edge_length > 0 and abs(cross) <= COORD_TOLERANCE * edge_length:
+                    return True
 
         inside = False
         p1x, p1y = poly[-1][1], poly[-1][0]
@@ -448,11 +479,13 @@ class CustomZoneSensor(SensorEntity):
         """Return parsed accuracy meters and a diagnostic reason when unusable."""
         if accuracy is None:
             return None, DIAGNOSTIC_CONFIDENCE_DATA_MISSING
+        if isinstance(accuracy, bool):
+            return None, DIAGNOSTIC_CONFIDENCE_DATA_INVALID
         try:
             accuracy_m = float(accuracy)
         except (TypeError, ValueError):
             return None, DIAGNOSTIC_CONFIDENCE_DATA_INVALID
-        if accuracy_m <= 0:
+        if not math.isfinite(accuracy_m) or accuracy_m <= 0:
             return None, DIAGNOSTIC_CONFIDENCE_DATA_INVALID
         return accuracy_m, None
 
