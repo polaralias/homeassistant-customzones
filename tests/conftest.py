@@ -17,7 +17,7 @@ def auto_enable_socket(socket_enabled):
     yield
 
 
-@pytest.fixture
-def event_loop_policy(socket_enabled):
-    """Allow socket access before pytest-asyncio creates the event loop."""
+@pytest.fixture(scope="session")
+def event_loop_policy():
+    """Use the session scope required by current pytest-asyncio runners."""
     return asyncio.get_event_loop_policy()
